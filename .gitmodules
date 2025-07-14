@@ -1,3 +1,3 @@
 [submodule "openapi"]
 	path = openapi
-	url = git@gitlab.com:cylonix/sase/sase-openapi.git
+	url = https://github.com/cylonix/cylonix-manager-openapi

@@ -24,8 +24,8 @@ This application interfaces with multiple Cylonix backend components via their r
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/cylonix/sase-manager-ui.git
-   cd sase-manager-ui
+   git clone https://github.com/cylonix/cylonix-manager-ui.git
+   cd cylonix-manager-ui
    ```
 
 2. Initialize API submodules:
