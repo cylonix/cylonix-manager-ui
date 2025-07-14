@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -55,7 +60,7 @@ async function deleteItem(item: WgInstance) {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -66,7 +71,7 @@ async function deleteItem(item: WgInstance) {
     newToast({
       on: true,
       color: 'green',
-      text: `Deleted wireguard instance ${item.name}`
+      text: `Deleted wireguard instance ${item.name}`,
     })
   })
   if (ret) {
@@ -81,7 +86,7 @@ async function loadItems(options: any) {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -114,7 +119,7 @@ function confirmDeleteText(item: WgInstance): string {
     <v-row align="center" class="mx-2 my-2">
       <v-chip size="large">WireGuard gateways</v-chip>
       <v-spacer></v-spacer>
-      <AddButton @click="addWgDialog=true"></AddButton>
+      <AddButton @click="addWgDialog = true"></AddButton>
       <RefreshButton @refresh="loadItems(loadOptions)" />
     </v-row>
     <v-data-table-server

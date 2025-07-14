@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -25,13 +30,15 @@ const ready = computed(() => {
 async function add() {
   const ret = await tryRequest(async () => {
     loading.value = true
-    await supResourceAPI().postOriginWgResource(props.namespace, <WgNamespaceConfig>{
-      pops: popNames.value
+    await supResourceAPI().postOriginWgResource(props.namespace, <
+      WgNamespaceConfig
+    >{
+      pops: popNames.value,
     })
     newToast({
       on: true,
       color: 'green',
-      text: `Added '${popNames.value}' to '${props.namespace}' successfully`
+      text: `Added '${popNames.value}' to '${props.namespace}' successfully`,
     })
     // Remove dialog after success.
     dialog.value = false

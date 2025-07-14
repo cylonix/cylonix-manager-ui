@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
@@ -11,7 +16,7 @@ const headers = ref([
   {
     title: 'Created At',
     key: 'createdAt',
-    value: (item: any) => shortTs(item.createdAt * 1000)
+    value: (item: any) => shortTs(item.createdAt * 1000),
   },
   { title: 'Enterprise ID', key: 'namespace' },
   { title: 'State', key: 'state' },
@@ -19,13 +24,13 @@ const headers = ref([
   { title: 'Type', key: 'type' },
   {
     title: 'Message',
-    key: 'message'
+    key: 'message',
   },
   {
     title: 'History',
-    key: 'data-table-expand'
+    key: 'data-table-expand',
   },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
 function shortID(id?: string): string | undefined {

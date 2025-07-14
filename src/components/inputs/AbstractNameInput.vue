@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { VTextField } from 'vuetify/components'

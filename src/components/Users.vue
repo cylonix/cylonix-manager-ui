@@ -1,10 +1,14 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 
 const store = useUserStore()
 const { isSysAdmin } = storeToRefs(store)
-
 </script>
 <template>
   <v-row>

@@ -1,3 +1,6 @@
+// Copyright (c) EZBLOCK INC. & AUTHORS
+// SPDX-License-Identifier: BSD-3-Clause
+
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Notice } from '@/clients/manager/api'

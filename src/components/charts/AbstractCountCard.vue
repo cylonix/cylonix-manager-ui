@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -50,7 +55,7 @@ async function loadInstantCount(namespace: string, online?: boolean) {
     namespace: namespace,
     countType: getCountType(online),
     userID: props.userID,
-    deviceID: props.deviceID
+    deviceID: props.deviceID,
   })
   console.log('current count', ret)
   if (!ret) {
@@ -75,7 +80,7 @@ async function loadRangeCount(namespace: string, online?: boolean) {
     deviceID: props.deviceID,
     start: start,
     end: now,
-    step: '5m'
+    step: '5m',
   })
   console.log('load count:', ret)
   if (!ret) {
@@ -86,12 +91,12 @@ async function loadRangeCount(namespace: string, online?: boolean) {
     return
   }
   if (ret.values) {
-    const values = ret.values.map(v => v[1])
+    const values = ret.values.map((v) => v[1])
     online
       ? (onlineCountValues.value = values as number[])
       : (totalCountValues.value = values as number[])
     if (!online) {
-      labels.value = ret.values.map(v => {
+      labels.value = ret.values.map((v) => {
         const time = v[0] ?? 0
         const date = new Date(time * 1000)
         return toHhMmString(date)

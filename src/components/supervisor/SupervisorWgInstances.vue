@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -5,7 +10,7 @@ import {
   Status,
   WgInstance,
   WgNamespace,
-  WgNamespaceResource
+  WgNamespaceResource,
 } from '@/clients/supervisor/api'
 import type { Alert } from '@/plugins/alert'
 import { supResourceAPI, supWgAPI, tryRequest } from '@/plugins/api'
@@ -25,14 +30,14 @@ const headers = ref([
   { title: 'Pop', key: 'pop' },
   { title: 'Port', key: 'port' },
   { title: 'Status', key: 'status' },
-  { title: 'IP', key: 'ip' }
+  { title: 'IP', key: 'ip' },
 ] as const)
 
 const resourceHeaders = ref([
   { title: 'ID', key: 'id' },
   { title: 'Name', key: 'name' },
   { title: 'Status', key: 'status' },
-  { title: 'Details', key: 'namespace' }
+  { title: 'Details', key: 'namespace' },
 ] as const)
 
 onMounted(() => {
@@ -53,7 +58,7 @@ async function loadSystemWgs() {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -75,7 +80,7 @@ async function loadWgResources() {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }

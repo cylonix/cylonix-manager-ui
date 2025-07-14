@@ -1,9 +1,12 @@
-<script setup lang="ts">
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
 
+<script setup lang="ts">
 const emit = defineEmits(['change'])
 const namespace = defineModel<string>('namespace')
 const namespaceType = defineModel<string>('namespaceType')
-
 </script>
 <template>
   <v-row justify="start"

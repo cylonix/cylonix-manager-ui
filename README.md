@@ -1,81 +1,145 @@
-# Vuetify (Default)
+# Cylonix Manager UI
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+This is the UI service code for the Cylonix Secure Network Access Manager, providing a modern web interface for the Cylonix controller. It's built with Vue 3 and Vuetify 3, offering a responsive and feature-rich user experience for managing your Cylonix infrastructure.
 
-## ❗️ Important Links
+## 📋 Overview
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
+This application interfaces with multiple Cylonix backend components via their respective APIs:
 
-## 💿 Install
+- **Cylonix Manager API**: Core management functionality
+- **Cylonix Supervisor API**: System supervision services for Cylonix WireGuard Gateways, Cilium Firewalls and VPP routers.
+- **Headscale API**: Network mesh control (Cylonix's fork of Headscale)
 
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
+## 🚀 Getting Started
 
-| Package Manager                                                | Command        |
-|---------------------------------------------------------------|----------------|
-| [yarn](https://yarnpkg.com/getting-started)                   | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install)     | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                          | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                        | `bun install`  |
+### Prerequisites
 
-After completing the installation, your environment is ready for Vuetify development.
+- Node.js (LTS version recommended)
+- npm or yarn
+- Git
+- Docker (for containerized deployment)
 
-## ✨ Features
+### Initial Setup
 
-- 🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
-- 🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
-- 🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts](https://github.com/JohnCampionJr/vite-plugin-vue-layouts)
-- 💻 **Enhanced Development Experience**: Benefit from TypeScript's static type checking and the ESLint plugin suite for Vue, ensuring code quality and consistency. [TypeScript](https://www.typescriptlang.org/) | [ESLint Plugin Vue](https://eslint.vuejs.org/)
-- ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
-- 🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
-- 🛠️ **Strongly-Typed Vue**: Use vue-tsc for type-checking your Vue components, and enjoy a robust development experience. [vue-tsc](https://github.com/johnsoncodehk/volar/tree/master/packages/vue-tsc)
+1. Clone the repository:
 
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
+   ```bash
+   git clone https://github.com/cylonix/sase-manager-ui.git
+   cd sase-manager-ui
+   ```
 
-## 💡 Usage
+2. Initialize API submodules:
 
-This section covers how to start the development server and build your project for production.
+   ```bash
+   git submodule update --init --recursive
+   ```
 
-### Starting the Development Server
+3. Generate API clients:
 
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+   ```bash
+   make generate
+   ```
+
+4. Configure environment:
+
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+   Edit `.env.local` to set the appropriate API endpoints for your environment.
+
+### Development Server
+
+To run the development server:
+Note a local server may not work with remote cylonix-manager as the
+redirect endpoint for oauth providers like google signin. You can use
+an email and password login test account to test instead.
 
 ```bash
-yarn dev
+make dev
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+This will:
 
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
+- Install dependencies
+- Start the development server at [http://localhost:3030](http://localhost:3030)
 
 ### Building for Production
 
-To build your project for production, use:
+To build the project for production:
 
 ```bash
-yarn build
+make build
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+### Docker Deployment
 
-Once the build process is completed, your application will be ready for deployment in a production environment.
+To build and tag Docker images:
 
-## 💪 Support Vuetify Development
+```bash
+make docker
+```
 
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
+This creates Docker images with the following tags:
 
-- [Requesting Enterprise Support](https://support.vuetifyjs.com/)
-- [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
-- [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
-- [Supporting the team on Open Collective](https://opencollective.com/vuetify)
-- [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
-- [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
-- [Making a one-time donation with Paypal](https://paypal.me/vuetify)
+- `cylonix/cylonix-manager-ui:${VERSION}`
+- `cylonix/cylonix-manager-ui:${RELEASE}`
+- `cylonix/cylonox-manager-ui:latest`
 
-## 📑 License
-[MIT](http://opensource.org/licenses/MIT)
+## 🛠️ Available Commands
 
-Copyright (c) 2016-present Vuetify, LLC
+| Command | Description |
+|---------|-------------|
+| `make dev` | Installs dependencies and starts development server |
+| `make build` | Builds the application for production |
+| `make docker` | Creates Docker images |
+| `make generate` | Generates all API clients |
+| `make supervisor-api` | Generates only Supervisor API client |
+| `make manager-api` | Generates only Manager API client |
+| `make headscale-api` | Generates only Headscale API client |
+| `make version` | Updates version information |
+| `make report` | Generates build reports |
+
+## ⚙️ Configuration
+
+The application can be configured through environment variables in `.env.local`:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_BASE_URL` | Base URL for the application | `/manager/v2` |
+| `VITE_SERVER_PORT` | Port for the development server | `3030` |
+| `VITE_MANAGER_API_TARGET_URL` | URL for Manager API | `https://manage.cylonix.io/` |
+| `VITE_MANAGER_VPN_API_TARGET_URL` | URL for VPN API | `https://manage.cylonix.io/vpn` |
+| `VITE_METRICS_TARGET_URL` | URL for Metrics API | `https://manage.cylonix.io/metrics` |
+| `VITE_WS_TARGET_URL` | URL for WebSocket connections | `https://manage.cylonix.io/` |
+| `VITE_WS_URL` | WebSocket URL for alerts | `ws://localhost:3030/ws/log/v1/alert` |
+| `VITE_LOGIN_REDIRECT_BASE_URL` | OAuth redirect URL | `http://localhost:3030/oauth-success` |
+| `VITE_USE_MD3` | Flag to use Material Design 3 | `true` |
+
+## ✨ Features
+
+- 🖼️ **Modern UI**: Built with Vue 3 and Vuetify 3 for a responsive and intuitive interface
+- 🔒 **Secure Access Management**: Complete control over your SASE infrastructure
+- 📊 **Dashboard & Metrics**: Real-time visibility into your network performance
+- 🔄 **State Management**: Uses Pinia for efficient state handling
+- 🌐 **Network Control**: Integration with Headscale for mesh network management
+- 🚀 **Fast Development**: Powered by Vite for quick builds and hot module replacement
+- 📱 **Responsive Design**: Works on desktop and mobile devices
+
+## 📦 Technology Stack
+
+- **Frontend Framework**: Vue 3
+- **UI Library**: Vuetify 3
+- **State Management**: Pinia
+- **Router**: Vue Router
+- **API Clients**: Generated TypeScript-Axios clients
+- **Build Tool**: Vite
+- **Type Checking**: TypeScript
+- **Code Editor**: Monaco Editor integration
+- **Charting**: ECharts
+
+## 📄 License
+
+[BSD 3-Clause License](./LICENSE)
+
+Copyright (c) 2025 EZBLOCK INC. & AUTHORS.

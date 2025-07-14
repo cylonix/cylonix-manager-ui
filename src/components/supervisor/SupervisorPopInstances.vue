@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -7,10 +12,15 @@ import {
   PopApplyInput,
   PopInstance,
   PopResource,
-  Status
+  Status,
 } from '@/clients/supervisor/api'
 import type { Alert } from '@/plugins/alert'
-import { supPopAPI, supResourceAPI, supRouteAPI, tryRequest } from '@/plugins/api'
+import {
+  supPopAPI,
+  supResourceAPI,
+  supRouteAPI,
+  tryRequest,
+} from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
@@ -30,7 +40,7 @@ const headers = ref([
   { title: 'Routes', key: 'routes' },
   { title: 'Status', key: 'status', align: 'center' },
   { title: 'Tunnels', key: 'tunnels' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
 onMounted(() => {
@@ -57,21 +67,21 @@ async function deleteItem(item: PopInstance) {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
   loading.value = true
   const ret = await tryRequest(async () => {
     await supPopAPI().popRemoveFromUser(namespace, <PopApplyInput>{
-      pops: [item.name]
+      pops: [item.name],
     })
     // TODO: make loading pop instances API base on namespace and pop only.
     emit('refresh')
     newToast({
       on: true,
       color: 'green',
-      text: `Removed pop instance ${item.name} from ${namespace}`
+      text: `Removed pop instance ${item.name} from ${namespace}`,
     })
   })
   if (ret) {
@@ -90,7 +100,7 @@ async function loadSystemPops() {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -98,7 +108,7 @@ async function loadSystemPops() {
   loading.value = true
   const ret = await tryRequest(async () => {
     const ret = await supPopAPI().getPopList()
-    allPops.value = ret?.data.popList?.map(p => p.name) ?? []
+    allPops.value = ret?.data.popList?.map((p) => p.name) ?? []
     console.log('instances:', ret?.data)
   })
   if (ret) {
@@ -112,7 +122,7 @@ async function loadPopResources() {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -137,15 +147,15 @@ function refresh() {
 }
 
 function canAddPop(current: Array<PopInstance>): boolean {
-  const existing = current.map(p => p.name)
-  const toAdd = allPops.value.filter(p => !existing.some(e => e == p))
+  const existing = current.map((p) => p.name)
+  const toAdd = allPops.value.filter((p) => !existing.some((e) => e == p))
   return toAdd.length > 0
 }
 
 function addPop() {
   addPopDialog.value = true
-  const existing = props.instances.map(p => p.name)
-  addPops.value = allPops.value.filter(p => !existing.some(e => e == p))
+  const existing = props.instances.map((p) => p.name)
+  addPops.value = allPops.value.filter((p) => !existing.some((e) => e == p))
 }
 
 function addRoute(item: PopInstance) {
@@ -157,7 +167,7 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
   if (!popID) {
     alert.value = <Alert>{
       on: true,
-      text: 'pop is not set'
+      text: 'pop is not set',
     }
     return
   }
@@ -166,12 +176,12 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
     await supRouteAPI().deleteNamespaceRoute(props.namespace, popID, <
       IPRouteDeleteInput
     >{
-      ids: [item.id ?? '']
+      ids: [item.id ?? ''],
     })
     newToast({
       on: true,
       color: 'green',
-      text: `Deleted route ${item.dest} -> ${item.via} successfully.`
+      text: `Deleted route ${item.dest} -> ${item.via} successfully.`,
     })
   })
   if (ret) {
@@ -253,14 +263,15 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
         </v-data-table>
       </v-col>
     </v-row>
-    <v-data-table v-for="i in popResources"
-          v-model:items-per-page="itemsPerPage"
-          density="comfortable"
-          :items="i.userPopResources"
-          :items-length="i.userPopResources?.length"
-          :loading="loading"
-          :search="search"
-        ></v-data-table>
+    <v-data-table
+      v-for="i in popResources"
+      v-model:items-per-page="itemsPerPage"
+      density="comfortable"
+      :items="i.userPopResources"
+      :items-length="i.userPopResources?.length"
+      :loading="loading"
+      :search="search"
+    ></v-data-table>
     <AddSupervisorPopToNamespaceDialog
       v-model="addPopDialog"
       :namespace="namespace"

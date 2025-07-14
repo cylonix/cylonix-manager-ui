@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
@@ -15,7 +20,7 @@ const headers = ref([
   {
     title: 'ID',
     align: 'center',
-    key: 'id'
+    key: 'id',
   },
   { title: 'Company Name', align: 'start', key: 'name' },
   { title: 'Enterprise ID', align: 'start', key: 'namespace' },
@@ -25,7 +30,7 @@ const headers = ref([
   { title: 'Auto accept routes', align: 'center', key: 'auto-accept-routes' },
   { title: 'Welcome email sent', align: 'center', key: 'welcome-email-sent' },
   { title: 'Address', align: 'center', key: 'data-table-expand' },
-  { title: 'Actions', align: 'center', key: 'actions', sortable: false }
+  { title: 'Actions', align: 'center', key: 'actions', sortable: false },
 ] as const)
 
 const addTenantDialog = ref()
@@ -87,7 +92,7 @@ async function deleteTenant(item: TenantConfig) {
     newToast({
       on: true,
       color: 'green',
-      text: `Tenant "${item.name}" has been deleted successfully.`
+      text: `Tenant "${item.name}" has been deleted successfully.`,
     })
     await loadTenants(loadTenantOptions.value)
   })

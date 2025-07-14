@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 defineProps(['hint', 'loading', 'required', 'roles', 'title'])
 const emit = defineEmits(['refresh'])

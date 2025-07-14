@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -15,7 +20,7 @@ const headers = ref([
   {
     title: 'User',
     key: 'user',
-    value: (item: any) => item.userDetail.loginName
+    value: (item: any) => item.userDetail.loginName,
   },
   { title: 'Key', key: 'key', align: 'center' },
   { title: 'Reusable', key: 'reusable' },
@@ -25,14 +30,14 @@ const headers = ref([
   {
     title: 'Expiration',
     key: 'expiration',
-    value: (item: any) => shortTs(item.expiration)
+    value: (item: any) => shortTs(item.expiration),
   },
   {
     title: 'Created',
     key: 'createdAt',
-    value: (item: any) => shortTs(item.createdAt)
+    value: (item: any) => shortTs(item.createdAt),
   },
-  { title: 'Actions', key: 'actions', align: 'center', sortable: false }
+  { title: 'Actions', key: 'actions', align: 'center', sortable: false },
 ] as const)
 
 const alert = ref<Alert>({ on: false })
@@ -58,7 +63,7 @@ async function deleteItem(item: V1PreAuthKey) {
     newToast({
       on: true,
       color: 'green',
-      text: `Successfully deleted api key ${item.id} for ${item.user}`
+      text: `Successfully deleted api key ${item.id} for ${item.user}`,
     })
   })
   if (ret) {
@@ -75,7 +80,7 @@ async function loadItems(options: any) {
   if (!uID) {
     alert.value = {
       on: true,
-      text: 'Missing user ID.'
+      text: 'Missing user ID.',
     }
     return
   }

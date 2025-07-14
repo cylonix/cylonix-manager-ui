@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Device, Label } from '@/clients/manager/api'
@@ -17,8 +22,8 @@ const dialog = ref(false)
 const dialogTitle = ref('')
 const event = ref<'add' | 'delete'>('delete')
 const addLabels = computed(() => {
-  const add = props.allLabels?.filter(l => {
-    return !(props.labels?.some(l1 => l1.id == l.id) ?? false)
+  const add = props.allLabels?.filter((l) => {
+    return !(props.labels?.some((l1) => l1.id == l.id) ?? false)
   })
   return add
 })

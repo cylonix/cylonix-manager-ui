@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -5,7 +10,7 @@ import { VForm } from 'vuetify/components'
 import {
   IPRoute,
   IPRouteCreateInput,
-  PopInstance
+  PopInstance,
 } from '@/clients/supervisor/api'
 import type { Alert } from '@/plugins/alert'
 import { supRouteAPI, tryRequest } from '@/plugins/api'
@@ -33,7 +38,7 @@ const ready = computed(() => {
 })
 
 const toPopNames = computed(() => {
-  return props.allPops.filter(p => p != props.pop?.name)
+  return props.allPops.filter((p) => p != props.pop?.name)
 })
 
 /*
@@ -51,7 +56,7 @@ async function add() {
   if (!popID) {
     alert.value = <Alert>{
       on: true,
-      text: "pop is not set"
+      text: 'pop is not set',
     }
     return
   }
@@ -69,14 +74,14 @@ async function add() {
           dest: dest.value,
           dev: dev,
           via: via.value,
-          vrf: vrf
-        }
-      ]
+          vrf: vrf,
+        },
+      ],
     })
     newToast({
       on: true,
       color: 'green',
-      text: `Added route ${dest.value} -> ${via.value} successfully.`
+      text: `Added route ${dest.value} -> ${via.value} successfully.`,
     })
     // Remove dialog after success.
     dialog.value = false

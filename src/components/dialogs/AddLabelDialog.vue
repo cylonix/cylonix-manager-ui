@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { VForm } from 'vuetify/components'
@@ -32,13 +37,13 @@ async function add() {
         scope: scope.value,
         category: category.value,
         color: color.value,
-        description: description.value
-      }
+        description: description.value,
+      },
     ])
     newToast({
       on: true,
       color: 'green',
-      text: `Added label ${name.value} successfully.`
+      text: `Added label ${name.value} successfully.`,
     })
     // Remove dialog after success.
     dialog.value = false

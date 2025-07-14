@@ -1,3 +1,6 @@
+// Copyright (c) EZBLOCK INC. & AUTHORS
+// SPDX-License-Identifier: BSD-3-Clause
+
 const shortFmt = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'short',
   timeStyle: 'short',

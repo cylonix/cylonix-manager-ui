@@ -1,5 +1,8 @@
+# Copyright (c) EZBLOCK INC. & AUTHORS
+# SPDX-License-Identifier: BSD-3-Clause
+
 # build stage
-FROM node:20.0.0 AS build-stage
+FROM node:20-alpine AS build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

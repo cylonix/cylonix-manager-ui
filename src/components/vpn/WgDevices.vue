@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { WgDevice } from '@/clients/manager/api'
@@ -15,19 +20,19 @@ const headers = ref([
   {
     title: 'Addresses',
     key: 'addresses',
-    value: (item: any) => compactList(item.addresses)
+    value: (item: any) => compactList(item.addresses),
   },
   {
     title: 'Allowed IPs',
     key: 'allowedIps',
-    value: (item: any) => compactList(item.allowedIps)
+    value: (item: any) => compactList(item.allowedIps),
   },
   {
     title: 'Last seen',
     Key: 'lastSeen',
-    value: (item: any) => shortTs(item.lastSeen)
+    value: (item: any) => shortTs(item.lastSeen),
   },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
 const alert = ref<Alert>({ on: false })
@@ -56,7 +61,7 @@ async function deleteItem(item: WgDevice) {
     newToast({
       on: true,
       color: 'green',
-      text: `Deleted wireguard device ${name(item)}/${item.namespace}`
+      text: `Deleted wireguard device ${name(item)}/${item.namespace}`,
     })
   })
   if (ret) {

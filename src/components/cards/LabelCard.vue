@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 defineProps(['label', 'variant'])
 </script>
@@ -13,7 +18,8 @@ defineProps(['label', 'variant'])
         <template v-slot:item.star="{ item }">
           <v-icon v-if="item.star" color="green" icon="mdi-star"></v-icon>
         </template>
-        <template v-slot:bottom></template></v-data-table>
+        <template v-slot:bottom></template
+      ></v-data-table>
     </v-card-item>
   </v-card>
 </template>

@@ -1,9 +1,14 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup>
 import { useTheme } from 'vuetify'
 
 const theme = useTheme()
 
-function toggleTheme () {
+function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
 }
 </script>

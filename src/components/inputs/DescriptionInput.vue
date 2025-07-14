@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 
@@ -8,7 +13,7 @@ const rules = ref([
   (v: any) => !props.required || !!v || props.label + ' is required',
   (v: any) =>
     (v && v.length >= 2 && v.length <= 100) ||
-    props.label + ' must be between 2 and 30 characters.'
+    props.label + ' must be between 2 and 30 characters.',
 ])
 </script>
 <template>
@@ -18,7 +23,7 @@ const rules = ref([
       autocomplete: autocomplete,
       clearable: true,
       density: 'compact',
-      rules: rules
+      rules: rules,
     }"
     :label="label ?? 'Description'"
     :required="required"

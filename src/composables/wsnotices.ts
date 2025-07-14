@@ -1,3 +1,6 @@
+// Copyright (c) EZBLOCK INC. & AUTHORS
+// SPDX-License-Identifier: BSD-3-Clause
+
 import { storeToRefs } from 'pinia'
 import { ref, watch } from 'vue'
 import { camelizeKeys } from '@cylonix/humps'

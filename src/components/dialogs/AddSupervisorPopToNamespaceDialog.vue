@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -24,21 +29,21 @@ const ready = computed(() => {
 
 async function add() {
   const popNames = props.addPops.filter((_: string, index: number) =>
-    selected.value.some(i => i == index)
+    selected.value.some((i) => i == index)
   )
   if (popNames.length <= 0) {
-    alert.value = <Alert>{ on: true, text: "Please select a pop to apply." }
+    alert.value = <Alert>{ on: true, text: 'Please select a pop to apply.' }
     return
   }
   const ret = await tryRequest(async () => {
     loading.value = true
     await supPopAPI().popApply(props.namespace, <PopApplyInput>{
-      pops: popNames
+      pops: popNames,
     })
     newToast({
       on: true,
       color: 'green',
-      text: `Added '${popNames}' to '${props.namespace}' successfully`
+      text: `Added '${popNames}' to '${props.namespace}' successfully`,
     })
     // Remove dialog after success.
     dialog.value = false

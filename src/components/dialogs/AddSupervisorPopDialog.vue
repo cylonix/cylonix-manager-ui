@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -62,13 +67,13 @@ async function add() {
       managementIntfAddr: `172.32.${net.value}.1`,
       prefixLen: 24,
       publicCloud: cloud.value,
-      intfType: 'veth'
+      intfType: 'veth',
     }
     await supPopAPI().createPop(input)
     newToast({
       on: true,
       color: 'green',
-      text: `Added pop ${name.value} successfully`
+      text: `Added pop ${name.value} successfully`,
     })
     // Remove dialog after success.
     console.log('pop config:', input)

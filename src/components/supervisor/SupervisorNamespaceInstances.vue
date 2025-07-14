@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -23,7 +28,7 @@ async function loadItems(options: any) {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }

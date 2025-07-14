@@ -1,14 +1,19 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 defineProps(['addNote', 'confirmDeleteText', 'okDeleteDisabled', 'title'])
 const emit = defineEmits(['delete', 'pre-delete'])
 const note = defineModel<string>('note')
 const deleteDialog = ref(false)
-function clickDelete () {
+function clickDelete() {
   emit('pre-delete')
   deleteDialog.value = true
 }
-function okDelete () {
+function okDelete() {
   emit('delete')
   deleteDialog.value = false
 }
@@ -37,6 +42,10 @@ function okDelete () {
     @ok="okDelete"
     ><template v-slot:item>
       <slot name="delete-dialog"></slot>
-      <NoteInput v-if="addNote" v-model="note" label="Deletion note" /> </template
+      <NoteInput
+        v-if="addNote"
+        v-model="note"
+        label="Deletion note"
+      /> </template
   ></ConfirmDialog>
 </template>

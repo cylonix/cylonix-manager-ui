@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -38,7 +43,7 @@ import { useUserStore } from '@/stores/user'
     { title: 'Actions', key: 'actions', sortable: false }
 ] as const)*/
 
-const addPopDialog=ref(false)
+const addPopDialog = ref(false)
 const alert = ref<Alert>({ on: false })
 const itemsPerPage = ref(10)
 const loading = ref(false)
@@ -55,7 +60,7 @@ async function deleteItem(item: PopConfig) {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -81,7 +86,7 @@ async function loadItems(options: any) {
   if (!isSysAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for system administrators.'
+      text: 'Operation is only allowed for system administrators.',
     }
     return
   }
@@ -114,7 +119,7 @@ function confirmDeleteText(item: PopConfig): string {
     <v-row align="center" fluid>
       <v-chip size="large">Pops</v-chip>
       <v-spacer></v-spacer>
-      <AddButton label="Add Pop" @click="addPopDialog=true"></AddButton>
+      <AddButton label="Add Pop" @click="addPopDialog = true"></AddButton>
       <RefreshButton @refresh="loadItems(loadOptions)" />
     </v-row>
     <v-data-table-server

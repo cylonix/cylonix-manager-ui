@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -47,15 +52,13 @@ async function add() {
       lanAddr: `172.32.${net.value}.1`,
       defaultGateway: `172.32.${net.value}.1`,
       defaultInterface: 'br7',
-      hostName: pop.value
+      hostName: pop.value,
     }
     await supWgAPI().createWgInstance(input)
     newToast({
       on: true,
       color: 'green',
-      text: `Added WireGuard gateway ${
-        name.value
-      } successfully.`
+      text: `Added WireGuard gateway ${name.value} successfully.`,
     })
     // Remove dialog after success.
     console.log('wg instance:', input)

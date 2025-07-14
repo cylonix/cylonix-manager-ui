@@ -1,3 +1,6 @@
+// Copyright (c) EZBLOCK INC. & AUTHORS
+// SPDX-License-Identifier: BSD-3-Clause
+
 import { readonly, ref } from 'vue'
 import type { V1Node } from '@/clients/headscale/api'
 

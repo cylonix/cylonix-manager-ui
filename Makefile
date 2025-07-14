@@ -1,3 +1,6 @@
+# Copyright (c) EZBLOCK INC. & AUTHORS
+# SPDX-License-Identifier: BSD-3-Clause
+
 .PHONY: build docker
 RELEASE?=v2.0
 VERSION:=$(shell git describe --tags --exact-match 2> /dev/null || \
@@ -61,6 +64,6 @@ docker:
 		--network host                     \
 		--build-arg VERSION=${VERSION}     \
 		--build-arg RELEASE_TAG=${RELEASE} \
-		-t cylonix/sase-ui:${VERSION}      \
-		-t cylonix/sase-ui:${RELEASE}      \
-		-t cylonix/sase-ui:latest
+		-t cylonix/cylonix-manager-ui:${VERSION}      \
+		-t cylonix/cylonix-manager-ui:${RELEASE}      \
+		-t cylonix/cylonix-manager-ui:latest

@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { VForm } from 'vuetify/components'
@@ -8,7 +13,7 @@ import { newToast } from '@/plugins/toast'
 
 const emit = defineEmits(['added'])
 const dialog = defineModel<boolean>()
-const password = defineModel<string>("password")
+const password = defineModel<string>('password')
 
 const alert = ref<Alert>({ on: false })
 const email = ref('')

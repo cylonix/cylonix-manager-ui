@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -16,7 +21,7 @@ const headers = ref([
   { title: 'Category', key: 'category' },
   { title: 'Star', key: 'star', align: 'center' },
   { title: 'Description', key: 'description', align: 'center' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
 const addDialog = ref(false)
@@ -54,7 +59,7 @@ async function deleteItem(item: Label) {
       text: `
 Only administrator can delete or create a public label.
 Please login as an administrator first.
-`
+`,
     }
     return
   }
@@ -65,7 +70,7 @@ Please login as an administrator first.
     newToast({
       on: true,
       color: 'green',
-      text: `Successfully deleted label ${name(item)}`
+      text: `Successfully deleted label ${name(item)}`,
     })
   })
   if (ret) {

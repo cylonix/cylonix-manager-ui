@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) EZBLOCK INC. & AUTHORS
+  SPDX-License-Identifier: BSD-3-Clause
+-->
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -17,25 +22,25 @@ const headers = ref([
   {
     title: 'Addresses',
     key: 'addresses',
-    value: (item: any) => compactList(item.addresses)
+    value: (item: any) => compactList(item.addresses),
   },
   {
     title: 'Allowed IPs',
     key: 'allowedIps',
-    value: (item: any) => compactList(item.allowedIps)
+    value: (item: any) => compactList(item.allowedIps),
   },
   {
     title: 'Endpoints',
     key: 'endpoints',
-    value: (item: any) => compactList(item.endpoints)
+    value: (item: any) => compactList(item.endpoints),
   },
   { title: 'Online', key: 'online', align: 'center' },
   {
     title: 'Last seen',
     Key: 'lastSeen',
-    value: (item: any) => shortTs(item.lastSeen)
+    value: (item: any) => shortTs(item.lastSeen),
   },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
 const alert = ref<Alert>({ on: false })
@@ -66,7 +71,7 @@ async function deleteItem(item: WgNode) {
     newToast({
       on: true,
       color: 'green',
-      text: `Deleted wireguard node ${name(item)}/${item.namespace}`
+      text: `Deleted wireguard node ${name(item)}/${item.namespace}`,
     })
   })
   if (ret) {
@@ -82,17 +87,13 @@ async function loadItems(options: any) {
   if (!isAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Operation is only allowed for administrators.'
+      text: 'Operation is only allowed for administrators.',
     }
     return
   }
 
   const ret = await tryRequest(async () => {
-    const ret = await wgAPI.listWgNodes(
-      [],
-      options.page,
-      options.itemsPerPage
-    )
+    const ret = await wgAPI.listWgNodes([], options.page, options.itemsPerPage)
     totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.items ?? []
     console.log('wg nodes:', serverItems.value, ret?.data)
