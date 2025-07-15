@@ -79,14 +79,12 @@ async function loadUsers(options: any) {
     // withDetails?: boolean | undefined,
     const ret = await userAPI.getUserList(
       [] /* id list */,
-      undefined /* filterBy */,
-      undefined /* filterValue */,
+      "is_admin_user" /* filterBy */,
+      "true" /* filterValue */,
       options.sortBy[0]?.key /* sortBy */,
       options.sortBy[0]?.order /* sortDesc */,
       options.page,
       options.itemsPerPage,
-      false /* withDetails */,
-      true /* fromKeycloak */
     )
     totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.users ?? []

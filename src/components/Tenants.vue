@@ -29,6 +29,9 @@ const headers = ref([
   { title: 'Auto approve device', align: 'center', key: 'auto-approve-device' },
   { title: 'Auto accept routes', align: 'center', key: 'auto-accept-routes' },
   { title: 'Welcome email sent', align: 'center', key: 'welcome-email-sent' },
+  { title: 'Max Devices', key: 'maxDeviceCount', align: 'center' },
+  { title: 'Max Users', key: 'maxUserCount', align: 'center' },
+  { title: 'Max DevicesPerUser', key: 'maxDevicePerUser', align: 'center' },
   { title: 'Address', align: 'center', key: 'data-table-expand' },
   { title: 'Actions', align: 'center', key: 'actions', sortable: false },
 ] as const)

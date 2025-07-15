@@ -22,7 +22,7 @@ export function useWsNotices() {
   const alert = ref<Alert>()
   let retryCount = 0
   const { close, open, status } = useWebSocket(wsURL, {
-    immediate: isAdmin.value == true,
+    immediate: false,
     autoReconnect: {
       retries: () => {
         if (status.value != 'CLOSED') {

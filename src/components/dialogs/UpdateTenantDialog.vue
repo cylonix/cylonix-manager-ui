@@ -23,11 +23,19 @@ const loading = ref(false)
 const name = ref()
 const email = ref()
 const phone = ref()
+const maxUserCount = ref()
+const maxDeviceCount = ref()
+const maxDevicePerUser = ref()
 
 const ready = computed(() => {
   const t = props.tenant
   const same =
-    name.value == t?.name && email.value == t?.email && phone.value == t?.phone
+    name.value == t?.name &&
+    email.value == t?.email &&
+    phone.value == t?.phone &&
+    maxUserCount.value == t?.maxUserCount &&
+    maxDeviceCount.value == t?.maxDeviceCount &&
+    maxDevicePerUser.value == t?.maxDevicePerUser
   return props.tenant && isFormValid.value && changed.value && !same
 })
 
@@ -41,6 +49,9 @@ watchEffect(() => {
   name.value = t?.name
   email.value = t?.email
   phone.value = t?.phone
+  maxUserCount.value = t?.maxUserCount
+  maxDeviceCount.value = t?.maxDeviceCount
+  maxDevicePerUser.value = t?.maxDevicePerUser
 })
 
 function change() {
@@ -60,6 +71,9 @@ async function updateTenant() {
       namespace: t.namespace,
       email: email.value,
       phone: phone.value,
+      maxUserCount: Number(maxUserCount.value),
+      maxDeviceCount: Number(maxDeviceCount.value),
+      maxDevicePerUser: Number(maxDevicePerUser.value),
       autoAcceptRoutes: t.autoAcceptRoutes,
       autoApproveDevice: t.autoApproveDevice,
       welcomeEmailSent: t.welcomeEmailSent,
@@ -95,6 +109,27 @@ async function updateTenant() {
       <v-form ref="form" v-model="isFormValid" auto-complete="on">
         <EmailInput v-model="email" @change="change"></EmailInput>
         <PhoneInput v-model="phone" @change="change"></PhoneInput>
+        <v-text-field
+          v-model="maxUserCount"
+          label="Max User Count"
+          type="number"
+          min="0"
+          @change="change"
+        ></v-text-field>
+        <v-text-field
+          v-model="maxDeviceCount"
+          label="Max Device Count"
+          type="number"
+          min="0"
+          @change="change"
+        ></v-text-field>
+        <v-text-field
+          v-model="maxDevicePerUser"
+          label="Max Device Per User"
+          type="number"
+          min="0"
+          @change="change"
+        ></v-text-field>
       </v-form>
     </template>
   </ConfirmDialog>
