@@ -36,7 +36,19 @@ async function loadItems(options: any) {
   loading.value = true
   const ret = await tryRequest(async () => {
     const ret = await supInstanceAPI().getInstances()
-    instances.value = ret?.data
+    const data = ret?.data
+    if (data && typeof data === 'string') {
+      const v = data as string;
+      const preview = v.substring(0, 80) + (v.length > 80 ? '...' : '');
+      throw new Error(`Server returned invalid format - expected JSON. Got: ${preview}`);
+    }
+    instances.value = ret?.data?.filter(item => {
+      // Filter out undefined namespaces and those with invalid format
+      if (!item?.namespace) return false
+      if (item.namespace.length > 80) return false
+      if (item.namespace.includes(' ')) return false
+      return true
+    }) ?? []
     console.log('instances:', ret?.data)
   })
   if (ret) {
@@ -58,6 +70,7 @@ function refresh() {
     <v-row v-for="i in instances" fluid class="fill-height">
       <v-col :col="12">
         <SupervisorPopInstances
+          v-if="i.namespace"
           :namespace="i.namespace"
           :instances="i.instances?.popInstance ?? []"
           v-model:alert="alert"
@@ -68,6 +81,7 @@ function refresh() {
     <v-row v-for="i in instances" fluid>
       <v-col :col="12">
         <SupervisorWgInstances
+          v-if="i.namespace"
           :namespace="i.namespace"
           :instances="i.instances?.wgInstance ?? []"
           v-model:alert="alert"
@@ -78,6 +92,7 @@ function refresh() {
     <v-row v-for="i in instances" fluid>
       <v-col :col="12">
         <SupervisorFwInstances
+          v-if="i.namespace"
           :namespace="i.namespace"
           :instances="i.instances?.fwInstance ?? []"
           :pops="i.instances?.popInstance ?? []"
