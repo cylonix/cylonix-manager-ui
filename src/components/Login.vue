@@ -257,6 +257,7 @@ onMounted(() => {
         <PasswordInput
           v-if="loginType == LoginType.Username"
           v-model="password"
+          autofocus
           @change="changed"
           @submit="submit"
         />
@@ -296,14 +297,20 @@ onMounted(() => {
 
       <v-row justify="center">
         <v-col cols="12">
-          <p class="my-4 text-body-2 text-center d-block">OR</p>
+          <p class="my-3 text-body-2 text-center d-block">OR</p>
         </v-col>
       </v-row>
       <GoogleSignIn :sessionID="sessionID" v-model:alert="alert" />
       <AppleSignin :sessionID="sessionID" v-model:alert="alert" />
-      <v-row class="mt-4" justify="center">
+      <v-row justify="center">
         <v-col cols="12">
-          <v-card-text class="text-body-2 text-center d-block">
+          <p class="my-2 text-body-2 text-center d-block">
+          Sign in for first time user will sign up automatically</p>
+        </v-col>
+      </v-row>
+      <v-row class="mt-2" justify="center">
+        <v-col cols="12">
+          <p class="text-body-2 text-center d-block">
             First time user?
             <a
               variant="text"
@@ -314,13 +321,13 @@ onMounted(() => {
             >
               Learn more at cylonix.io
             </a>
-          </v-card-text>
+          </p>
         </v-col>
       </v-row>
 
       <v-row justify="center">
         <v-col cols="12">
-          <v-card-text
+          <p
             class="text-caption text-center text-grey-darken-1 d-block"
           >
             By continuing, you agree to our
@@ -331,7 +338,7 @@ onMounted(() => {
             <router-link to="/privacy-policy" class="text-link">
               Privacy Policy
             </router-link>
-          </v-card-text>
+          </p>
         </v-col>
       </v-row>
     </v-sheet>

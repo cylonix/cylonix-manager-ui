@@ -18,10 +18,10 @@ defineProps(['title'])
 
 const router = useRouter()
 const route = useRoute()
-const { alert, connect, status } = useWsNotices()
+const { alert, toggle } = useWsNotices()
 const { toast } = storeToRefs(useToastStore())
 const { isAdmin, loggedIn, username } = storeToRefs(useUserStore())
-const { wsStatusColor } = storeToRefs(useNoticeStore())
+const { wsStatus, wsStatusColor } = storeToRefs(useNoticeStore())
 
 const isLoginRoute = computed(() => {
   return route.path == '/login'
@@ -70,11 +70,11 @@ setInterval(async () => {
         <v-chip
           class="mx-2 d-none d-md-flex"
           v-bind="props"
-          v-if="status"
-          @click="connect"
+          v-if="wsStatus"
+          @click="toggle"
           ><template v-slot:prepend>
             <v-icon :color="wsStatusColor" icon="mdi-bell"></v-icon> </template
-          ><span>{{ status }}</span></v-chip
+          ><span>{{ wsStatus }}</span></v-chip
         >
       </template>
       <span class="d-none d-md-inline"

@@ -12,6 +12,7 @@ type UnwrapReadonlyArray<A> = A extends Readonly<Array<infer I>> ? I : A
 type ValidationRule = UnwrapReadonlyArray<VTextField['rules']>
 defineProps({
   addRules: Array as PropType<ValidationRule[]>,
+  autofocus: Boolean,
   label: {
     type: String,
     default: 'Password',
@@ -45,10 +46,12 @@ function onKeydown(e: KeyboardEvent) {
     emit('submit')
   }
 }
+
 </script>
 <template>
   <v-text-field
     v-model="password"
+    :autofocus="autofocus"
     autocomplete="password"
     clearable
     density="compact"

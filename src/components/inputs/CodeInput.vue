@@ -105,6 +105,9 @@ async function sendCode() {
   </p>
   <v-otp-input
     v-if="codeSent"
+    autofocus
+    focus-all
+    focused
     v-model="code"
     :variant="variant || 'solo'"
     @update:model-value="emit('change')"

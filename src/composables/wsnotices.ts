@@ -52,6 +52,7 @@ export function useWsNotices() {
         })
       }
     },
+    heartbeat: true,
     onConnected() {
       console.log(`Connected to web socket "${wsURL}"`)
       alert.value = undefined
@@ -60,6 +61,7 @@ export function useWsNotices() {
       console.log(`Disconnected from web socket "${wsURL}:"`, event)
       // TODO: try to use a formal name for the 'policy violation' code.
       closeCode.value = event.code
+      wsStatus.value = 'CLOSED'
       switch (event.code) {
         case 1008:
           alert.value = <Alert>{
@@ -106,7 +108,24 @@ export function useWsNotices() {
     }
   }
 
+  function disconnect() {
+    if (status.value == 'OPEN') {
+      console.log('close web socket')
+      close()
+      wsStatus.value = 'CLOSED'
+    }
+  }
+
+  function toggle() {
+    if (status.value == 'OPEN') {
+      disconnect()
+    } else {
+      connect()
+    }
+  }
+
   watch(status, newValue => {
+    console.log('Web socket status changed:', newValue)
     wsStatus.value = newValue
   })
 
@@ -117,13 +136,16 @@ export function useWsNotices() {
     } else {
       console.log('No longer logged in. Disconnecting from the web socket.')
       close()
+      alert.value = undefined
     }
   })
 
   return {
     alert,
     connect,
+    disconnect,
     notices,
-    status
+    status,
+    toggle
   }
 }
