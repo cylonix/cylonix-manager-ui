@@ -6,16 +6,22 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { V1Node } from '@/clients/headscale/api'
+import { storeToRefs } from 'pinia'
+import type { V1Node, V1RouteSpec } from '@/clients/headscale/api'
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
+import { tryRequest, vpnAPI } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
+import { newToast } from '@/plugins/toast'
+import { useUserStore } from '@/stores/user'
 
 const { currentNode: nodeItem } = useCurrentNode()
 const router = useRouter()
 const goBack = () => {
   router.back()
 }
+const store = useUserStore()
+const { isNetworkAdmin } = storeToRefs(store)
 
 const alert = ref<Alert>({ on: false })
 
@@ -24,6 +30,61 @@ const getOSInfo = (item: V1Node) => {
   const os = item.hostinfo?.os || 'Unknown'
   const version = item.hostinfo?.osVersion || ''
   return version ? `${os} (${version})` : os
+}
+
+const isExitNode = (item: V1Node) => {
+  const routes = item.routes
+  if (!routes || routes.length <= 0) {
+    return false
+  }
+  var hasV4 = false
+  var hasV6 = false
+  for (var r of routes) {
+    if (r.prefix === '0.0.0.0/0' && r.enabled) {
+      hasV4 = true
+    } else if (r.prefix === '::/0' && r.enabled) {
+      hasV6 = true
+    }
+    if (hasV4 && hasV6) {
+      return true
+    }
+  }
+  return hasV4 && hasV6
+}
+
+const hasExitNodeRoutes = (item: V1Node) => {
+  const routes = item.routes
+  if (!routes || routes.length <= 0) {
+    return false
+  }
+  var hasV4 = false
+  var hasV6 = false
+  for (var r of routes) {
+    if (r.prefix === '0.0.0.0/0') {
+      hasV4 = true
+    } else if (r.prefix === '::/0') {
+      hasV6 = true
+    }
+    if (hasV4 && hasV6) {
+      return true
+    }
+  }
+  return hasV4 && hasV6
+}
+
+const nonDefaultRoutes = (item: V1Node) => {
+  const routes = item.routes
+  if (!routes || routes.length <= 0) {
+    return []
+  }
+  var nonDefaultRoutes: V1RouteSpec[] = []
+  for (var r of routes) {
+    if (r.prefix === '0.0.0.0/0' || r.prefix == '::/0') {
+      continue
+    }
+    nonDefaultRoutes.push(r)
+  }
+  return nonDefaultRoutes
 }
 
 const getRelativeTime = (timestamp: string) => {
@@ -39,6 +100,58 @@ const getRelativeTime = (timestamp: string) => {
     return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`
   } else {
     return 'Just now'
+  }
+}
+
+async function toggleRoute(route: V1RouteSpec) {
+  if (!isNetworkAdmin.value) {
+    return
+  }
+  const id = route.id
+  if (!id) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: `Route ID is missing for route ${route.prefix}`,
+    }
+    return
+  }
+  const enable = !route.enabled
+  const ret = await tryRequest(async () => {
+    ;(await enable)
+      ? vpnAPI.headscaleServiceEnableRoute(id)
+      : vpnAPI.headscaleServiceDisableRoute(id)
+    route.enabled = enable
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully ${enable ? 'enabled' : 'disabled'} route ${
+        route.prefix
+      }`,
+    })
+  })
+  if (ret) {
+    alert.value = ret
+  }
+}
+
+async function toggleExitNode(item: V1Node) {
+  if (!isNetworkAdmin.value) {
+    return
+  }
+  const routes = item.routes
+  if (!routes || routes.length <= 0) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: 'No routes found for this node',
+    }
+    return
+  }
+  for (var r of routes) {
+    if (r.prefix === '0.0.0.0/0' || r.prefix === '::/0') {
+      await toggleRoute(r)
+    }
   }
 }
 </script>
@@ -88,6 +201,74 @@ const getRelativeTime = (timestamp: string) => {
               </v-col>
             </v-row>
           </v-card-title>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Routes Setting -->
+    <v-row class="mt-4">
+      <v-col>
+        <v-card variant="text" class="mb-4">
+          <v-card-title>Routes Setting</v-card-title>
+          <v-card-text>
+
+          <div class="routes-container">
+            <v-row class="field-row">
+              <v-col cols="8" class="field-title">Exit Node</v-col>
+              <v-col cols="4" class="field-value">{{
+                  isExitNode(nodeItem as V1Node) ? 'Yes' :
+                    hasExitNodeRoutes(nodeItem as V1Node) ? 'Pending Approval' : 'Not Allowed'
+              }}</v-col>
+            </v-row>
+            <v-row
+              class="field-row"
+              v-if="hasExitNodeRoutes(nodeItem as V1Node)"
+            >
+              <v-col cols="8" class="field-title"></v-col>
+              <v-col cols="4" class="field-value">
+                <v-btn
+                  variant="flat"
+                  rounded="xs"
+                  v-if="isNetworkAdmin"
+                  @click="toggleExitNode(nodeItem as V1Node)"
+                  >{{ isExitNode(nodeItem as V1Node) ? 'Reject' : 'Approve'}}</v-btn
+                >
+              </v-col>
+            </v-row>
+            <v-row
+              align="center"
+              v-if="nonDefaultRoutes(nodeItem as V1Node).length > 0"
+              class="field-row"
+            >
+              <v-col cols="8" class="mt-5 field-title">Routes</v-col>
+              <v-col cols="4" class="field-value">{{
+                  nonDefaultRoutes(nodeItem as V1Node).length
+              }}</v-col>
+            </v-row>
+            <v-row
+              align="center"
+              v-if="nonDefaultRoutes(nodeItem as V1Node).length > 0"
+              v-for="route in nonDefaultRoutes(nodeItem as V1Node)"
+              :key="route.prefix"
+            >
+              <v-col cols="8" class="field-title"
+                ><span class="ml-5 route">{{ route.prefix }}</span>
+                {{ route.enabled ? 'Enabled' : 'Disabled' }}
+                {{ route.isPrimary ? ' (Primary)' : '' }}
+                {{ route.advertised ? ' (Advertised)' : '' }}
+              </v-col>
+              <v-col cols="4" class="field-value">
+                <v-btn
+                  variant="tonal"
+                  rounded="xs"
+                  v-if="isNetworkAdmin"
+                  @click="toggleRoute(route)"
+                  >{{ route.enabled ? 'Disable' : 'Enable' }}</v-btn
+                >
+              </v-col>
+            </v-row>
+          </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -501,5 +682,20 @@ const getRelativeTime = (timestamp: string) => {
   width: 100px;
   justify-content: space-between;
   padding: 2px 0;
+}
+.route {
+  font-weight: 500;
+  width: 100px;
+  display: inline-block;
+  min-width: 100px;
+}
+.routes-container {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px;
+}
+:deep(.v-theme--dark) .routes-container {
+  border-color: rgba(255, 255, 255, 0.12);
 }
 </style>
