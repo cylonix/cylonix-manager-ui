@@ -47,15 +47,24 @@ async function confirm() {
   loading.value = false
 }
 
+const redirectURL = (() => {
+  if (redirectToAPP) {
+    if (isMobile()) {
+      return 'https://cylonix.io/app/login-complete'
+    }
+    if (isMacOS()) {
+      return 'cylonixauth://app/login-complete'
+    }
+  }
+  return "/"
+})
+
 function redirectNow() {
   timer.value && clearInterval(timer.value)
   timer.value = null
-  if (redirectToAPP) {
-    if (isMacOS()) {
-      window.location.href = 'cylonixauth://app/login-complete'
-      return
-    }
-    window.location.href = 'https://cylonix.io/app/login-complete'
+  const url = redirectURL()
+  if (url && url != '/') {
+    window.location.href = url
     return
   }
   router.push('/')
