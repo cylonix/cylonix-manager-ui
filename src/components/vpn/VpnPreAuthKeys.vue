@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { V1PreAuthKey } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
@@ -12,17 +12,13 @@ import { tryRequest, vpnAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
-import ShortenTextChip from '../chips/ShortenTextChip.vue'
 
+const props = defineProps<{
+  forUserOnly: boolean
+}>()
 const headers = ref([
-  { title: 'ID', key: 'id' },
-  { title: 'Enterprise ID', key: 'namespace' },
-  {
-    title: 'User',
-    key: 'user',
-    value: (item: any) => item.userDetail.loginName,
-  },
   { title: 'Key', key: 'key', align: 'center' },
+  { title: "Description", key: 'description'},
   { title: 'Reusable', key: 'reusable' },
   { title: 'Ephemeral', key: 'ephemeral' },
   { title: 'Used', key: 'used' },
@@ -40,6 +36,17 @@ const headers = ref([
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
 ] as const)
 
+const adminHeaders = ref([
+  { title: 'User', key: 'user' },
+  ...headers.value,
+] as const)
+
+const sysAdminHeaders = ref([
+  { title: 'Namespace', key: 'namespace' },
+  ...adminHeaders.value,
+] as const)
+
+
 const alert = ref<Alert>({ on: false })
 const itemsPerPage = ref(10)
 const loading = ref(false)
@@ -52,13 +59,26 @@ const totalItems = ref(0)
 const store = useUserStore()
 const { isAdmin, namespace, isSysAdmin, user } = storeToRefs(store)
 
+const computedHeaders = computed(() => {
+  if (props.forUserOnly) {
+    return headers.value
+  } else if (isSysAdmin.value) {
+    return sysAdminHeaders.value
+  } else if (isAdmin.value) {
+    return adminHeaders.value
+  }
+  return headers.value
+})
+
 async function deleteItem(item: V1PreAuthKey) {
   loading.value = true
   const ret = await tryRequest(async () => {
     if (!item.id) {
       return
     }
-    await vpnAPI.headscaleServiceDeleteApiKey(item.id)
+    await vpnAPI.headscaleServiceDeletePreAuthKey(
+      item.id,
+    )
     await loadItems(loadOptions.value)
     newToast({
       on: true,
@@ -84,15 +104,13 @@ async function loadItems(options: any) {
     }
     return
   }
-  if (isAdmin.value) {
-    uID = undefined
-  }
+  console.log('Loading pre-auth keys for user:', uID, options, props.forUserOnly)
 
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListPreAuthKeys(
-      isAdmin.value ? undefined : uID,
+      isAdmin.value && !props.forUserOnly ? undefined : uID,
       [],
-      isSysAdmin.value ? undefined : namespace.value,
+      isSysAdmin.value && !props.forUserOnly ? undefined : namespace.value,
       undefined,
       undefined,
       options.sortBy[0]?.key /* sortBy */,
@@ -114,6 +132,11 @@ async function loadItems(options: any) {
 function confirmDeleteText(item: V1PreAuthKey): string {
   return `Delete api key with ID "${item.id}" for "${item.user}"?`
 }
+
+defineExpose({
+  loadItems,
+  loadOptions: computed(() => loadOptions.value)
+})
 </script>
 <template>
   <v-container>
@@ -125,7 +148,8 @@ function confirmDeleteText(item: V1PreAuthKey): string {
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
-      :headers="headers"
+      :headers="computedHeaders"
+      :hide-default-footer="itemsPerPage >= totalItems"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"

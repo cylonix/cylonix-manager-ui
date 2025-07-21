@@ -33,6 +33,7 @@ import VpnNodes from '@/components/vpn/VpnNodes.vue'
 import VpnNodeDetails from '@/components/vpn/VpnNodeDetails.vue'
 import VpnPreAuthKeys from '@/components/vpn/VpnPreAuthKeys.vue'
 import VpnRoutes from '@/components/vpn/VpnRoutes.vue'
+import VpnUserKeys from '@/components/vpn/VpnUserKeys.vue'
 import VpnUsers from '@/components/vpn/VpnUsers.vue'
 import WebPrivacyPolicy from '@/components/terms/WebPrivacyPolicy.vue'
 import WgDevices from '@/components/vpn/WgDevices.vue'
@@ -117,6 +118,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   { path: '/ui/vpn-routes', component: VpnRoutes, meta: { requiresAuth: true } },
+  { path: '/ui/vpn-user-keys', component: VpnUserKeys, meta: { requiresAuth: true } },
   { path: '/ui/vpn-users', component: VpnUsers, meta: { requiresAuth: true } },
   {
     path: '/ui/vpn-wg-devices',

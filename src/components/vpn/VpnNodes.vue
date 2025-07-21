@@ -157,7 +157,7 @@ const lgHeaders = ref([
   {
     title: 'Expiry',
     key: 'expiry',
-    value: (item: any) => shortTs(item.expiry),
+    value: (item: any) => formatExpiry(item.expiry),
   },
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
   { title: 'View details', key: 'viewDetails', align: 'center' },

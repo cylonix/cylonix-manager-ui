@@ -120,6 +120,12 @@ function updateRail() {
         to="/ui/vpn-nodes"
       ></v-list-item>
       <v-list-item
+        v-if="loggedIn"
+        title="Auth Keys"
+        prepend-icon="mdi-key-chain"
+        to="/ui/vpn-user-keys"
+      ></v-list-item>
+      <v-list-item
         v-if="isNetworkAdmin && !isAdmin"
         prepend-icon="mdi-routes"
         title="Routes"

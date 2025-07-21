@@ -39,8 +39,12 @@ export function toHhMmString(d: Date): string {
   return hh + ":" + mm
 }
 
+export function isZeroTimestamp(timestamp: string): boolean {
+  return timestamp === '0001-01-01T00:00:00Z'
+}
+
 export const formatExpiry = (expiry?: string) => {
-  if (!expiry) {
+  if (!expiry || isZeroTimestamp(expiry)) {
     return 'never'
   }
   const expiryDate = new Date(expiry)
