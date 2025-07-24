@@ -15,13 +15,13 @@ import { formatExpiry, shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
-const { currentNode: nodeItem } = useCurrentNode()
+const { currentNode: nodeItem, setCurrentNode } = useCurrentNode()
 const router = useRouter()
 const goBack = () => {
   router.back()
 }
 const store = useUserStore()
-const { isNetworkAdmin } = storeToRefs(store)
+const { isAdmin, isNetworkAdmin } = storeToRefs(store)
 
 const alert = ref<Alert>({ on: false })
 
@@ -103,8 +103,20 @@ const getRelativeTime = (timestamp: string) => {
   }
 }
 
+const confirmDeleteRouteText = (prefix: string | undefined): string => {
+  return (
+    `Are you sure you want to delete the route ${prefix}? ` +
+    'This action cannot be undone.'
+  )
+}
+
 async function toggleRoute(route: V1RouteSpec) {
   if (!isNetworkAdmin.value) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: 'Only Network Admins can enable or disable routes.',
+    }
     return
   }
   const id = route.id
@@ -118,9 +130,9 @@ async function toggleRoute(route: V1RouteSpec) {
   }
   const enable = !route.enabled
   const ret = await tryRequest(async () => {
-    ;(await enable)
-      ? vpnAPI.headscaleServiceEnableRoute(id)
-      : vpnAPI.headscaleServiceDisableRoute(id)
+    enable
+      ? await vpnAPI.headscaleServiceEnableRoute(id)
+      : await vpnAPI.headscaleServiceDisableRoute(id)
     route.enabled = enable
     newToast({
       on: true,
@@ -152,6 +164,37 @@ async function toggleExitNode(item: V1Node) {
     if (r.prefix === '0.0.0.0/0' || r.prefix === '::/0') {
       await toggleRoute(r)
     }
+  }
+}
+
+async function deleteRoute(route: V1RouteSpec) {
+  const id = route.id
+  if (!id) {
+    alert.value = {
+      on: true,
+      title: `Route ID is missing for route ${route.prefix}`,
+    }
+    return
+  }
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceDeleteRoute(id)
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully deleted route ${route.prefix}`,
+    })
+    const nodeID = nodeItem.value?.id
+    if (!nodeID) {
+      return
+    }
+    const resp = await vpnAPI.headscaleServiceGetNode(nodeID)
+    if (!resp || !resp.data.node) {
+      return
+    }
+    setCurrentNode(resp.data.node)
+  })
+  if (ret) {
+    alert.value = ret
   }
 }
 </script>
@@ -211,63 +254,71 @@ async function toggleExitNode(item: V1Node) {
         <v-card variant="text" class="mb-4">
           <v-card-title>Routes Setting</v-card-title>
           <v-card-text>
-
-          <div class="routes-container">
-            <v-row class="field-row">
-              <v-col cols="8" class="field-title">Exit Node</v-col>
-              <v-col cols="4" class="field-value">{{
+            <div class="routes-container">
+              <v-row class="field-row">
+                <v-col cols="8" class="field-title">Exit Node</v-col>
+                <v-col cols="4" class="field-value">{{
                   isExitNode(nodeItem as V1Node) ? 'Yes' :
                     hasExitNodeRoutes(nodeItem as V1Node) ? 'Pending Approval' : 'Not Allowed'
-              }}</v-col>
-            </v-row>
-            <v-row
-              class="field-row"
-              v-if="hasExitNodeRoutes(nodeItem as V1Node)"
-            >
-              <v-col cols="8" class="field-title"></v-col>
-              <v-col cols="4" class="field-value">
-                <v-btn
-                  variant="flat"
-                  rounded="xs"
-                  v-if="isNetworkAdmin"
-                  @click="toggleExitNode(nodeItem as V1Node)"
-                  >{{ isExitNode(nodeItem as V1Node) ? 'Reject' : 'Approve'}}</v-btn
-                >
-              </v-col>
-            </v-row>
-            <v-row
-              align="center"
-              v-if="nonDefaultRoutes(nodeItem as V1Node).length > 0"
-              class="field-row"
-            >
-              <v-col cols="8" class="mt-5 field-title">Routes</v-col>
-              <v-col cols="4" class="field-value">{{
+                }}</v-col>
+              </v-row>
+              <v-row
+                class="field-row"
+                v-if="hasExitNodeRoutes(nodeItem as V1Node)"
+              >
+                <v-col cols="8" class="field-title"></v-col>
+                <v-col cols="4" class="field-value">
+                  <v-btn
+                    variant="flat"
+                    rounded="xs"
+                    v-if="isNetworkAdmin"
+                    @click="toggleExitNode(nodeItem as V1Node)"
+                    >{{ isExitNode(nodeItem as V1Node) ? 'Reject' : 'Approve'}}</v-btn
+                  >
+                </v-col>
+              </v-row>
+              <v-row
+                align="center"
+                v-if="nonDefaultRoutes(nodeItem as V1Node).length > 0"
+                class="field-row"
+              >
+                <v-col cols="8" class="mt-5 field-title">Routes</v-col>
+                <v-col cols="4" class="field-value">{{
                   nonDefaultRoutes(nodeItem as V1Node).length
-              }}</v-col>
-            </v-row>
-            <v-row
-              align="center"
-              v-if="nonDefaultRoutes(nodeItem as V1Node).length > 0"
-              v-for="route in nonDefaultRoutes(nodeItem as V1Node)"
-              :key="route.prefix"
-            >
-              <v-col cols="8" class="field-title"
-                ><span class="ml-5 route">{{ route.prefix }}</span>
-                {{ route.enabled ? 'Enabled' : 'Disabled' }}
-                {{ route.isPrimary ? ' (Primary)' : '' }}
-                {{ route.advertised ? ' (Advertised)' : '' }}
-              </v-col>
-              <v-col cols="4" class="field-value">
-                <v-btn
-                  variant="tonal"
-                  rounded="xs"
-                  v-if="isNetworkAdmin"
-                  @click="toggleRoute(route)"
-                  >{{ route.enabled ? 'Disable' : 'Enable' }}</v-btn
-                >
-              </v-col>
-            </v-row>
-          </div>
+                }}</v-col>
+              </v-row>
+              <v-row
+                align="center"
+                v-if="nonDefaultRoutes(nodeItem as V1Node).length > 0"
+                v-for="route in nonDefaultRoutes(nodeItem as V1Node)"
+                :key="route.prefix"
+              >
+                <v-col cols="8" class="field-title"
+                  ><span class="ml-5 route">{{ route.prefix }}</span>
+                  {{ route.enabled ? 'Enabled' : 'Disabled' }}
+                  {{ route.isPrimary ? ' (Primary)' : '' }}
+                  {{ route.advertised ? ' (Advertised)' : '' }}
+                </v-col>
+                <v-col cols="4" class="field-value">
+                  <v-row
+                    ><v-btn
+                      variant="tonal"
+                      rounded="xs"
+                      v-if="isNetworkAdmin || isAdmin"
+                      @click="toggleRoute(route)"
+                      >{{ route.enabled ? 'Disable' : 'Enable' }}</v-btn
+                    >
+                    <DeleteButton
+                      v-if="!route.enabled"
+                      class="ml-2"
+                      title="Delete Route"
+                      :confirmDeleteText="confirmDeleteRouteText(route.prefix)"
+                      @delete="deleteRoute(route)"
+                    ></DeleteButton>
+                  </v-row>
+                </v-col>
+              </v-row>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -685,7 +736,7 @@ async function toggleExitNode(item: V1Node) {
 }
 .route {
   font-weight: 500;
-  width: 100px;
+  width: 200px;
   display: inline-block;
   min-width: 100px;
 }

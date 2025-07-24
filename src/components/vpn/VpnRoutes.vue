@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { decamelize } from '@cylonix/humps'
 import { V1Route } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
@@ -14,7 +15,7 @@ import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
-  { title: 'User', key: 'user' },
+  { title: 'User', key: 'user', sortable: false },
   { title: 'Node', key: 'node' },
   { title: 'Prefix', key: 'prefix' },
   { title: 'Advertised', key: 'advertised' },
@@ -30,6 +31,7 @@ const headers = ref([
     key: 'updatedAt',
     value: (item: any) => shortTs(item.updatedAt),
   },
+  { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
 const adminViewHeaders = ref([
@@ -49,7 +51,9 @@ const serverItems = ref<V1Route[]>()
 const totalItems = ref(0)
 
 const store = useUserStore()
-const { isAdmin, namespace, isSysAdmin, user } = storeToRefs(store)
+const { isAdmin, isNetworkAdmin, isSysAdmin, namespace, user } = storeToRefs(
+  store
+)
 
 async function deleteItem(item: V1Route) {
   loading.value = true
@@ -75,17 +79,19 @@ async function deleteItem(item: V1Route) {
 async function loadItems(options: any) {
   loadOptions.value = options
   loading.value = true
-  let uID = user.value?.userID
   const network = user.value?.networkDomain
-  if (!uID) {
+  if (!isAdmin.value && !isNetworkAdmin.value) {
     alert.value = {
       on: true,
-      text: 'Missing user ID.',
+      text: 'Only Network Admins can view routes.',
     }
-    return
   }
-  if (isAdmin.value) {
-    uID = undefined
+  var sortBy = options?.sortBy?.[0]?.key
+  if (sortBy) {
+    sortBy = decamelize(sortBy)
+  }
+  if (sortBy === 'node') {
+    sortBy = 'node_id'
   }
 
   const ret = await tryRequest(async () => {
@@ -96,12 +102,12 @@ async function loadItems(options: any) {
       isAdmin.value ? undefined : network,
       undefined,
       undefined,
-      options.sortBy[0]?.key /* sortBy */,
+      sortBy,
       options.sortBy[0]?.order == 'desc' ? true : false,
       options.page,
       options.itemsPerPage
     )
-    totalItems.value = ret?.data.routes?.length ?? 0
+    totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.routes ?? []
     console.log('routes:', serverItems.value, ret?.data)
   })
@@ -113,7 +119,7 @@ async function loadItems(options: any) {
 }
 
 function confirmDeleteText(item: V1Route): string {
-  return `Delete node "${item.prefix}" with ID "${item.id}"?`
+  return `Delete route "${item.prefix}" from ${item.node?.givenName}?`
 }
 </script>
 <template>
@@ -141,7 +147,10 @@ function confirmDeleteText(item: V1Route): string {
         ></AbstractChip>
       </template>
       <template v-slot:item.node="{ item }">
-        <AbstractChip :label="item.node?.name" :data="item.node"></AbstractChip>
+        <AbstractChip
+          :label="item.node?.givenName"
+          :data="item.node"
+        ></AbstractChip>
       </template>
 
       <template v-slot:item.advertised="{ item }">
