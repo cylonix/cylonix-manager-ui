@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { PredefinedRoles } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
+import { newToast } from '@/plugins/toast'
 
 const props = defineProps<{
   modelValue: boolean
@@ -12,13 +14,13 @@ const emit = defineEmits(['update:modelValue', 'invited'])
 const alert = ref<Alert>()
 const loading = ref(false)
 const emails = ref('')
-const role = ref('member')
+const role = ref<PredefinedRoles>(PredefinedRoles.Member)
 const inviteLink = ref('')
 const showLink = ref(false)
 
 const roles = [
-  { title: 'Network Admin', value: 'network_admin' },
-  { title: 'Member', value: 'member' },
+  { title: 'Network Admin', value: PredefinedRoles.NetworkAdmin },
+  { title: 'Member', value: PredefinedRoles.Member },
 ]
 
 const dialog = computed({
@@ -48,9 +50,11 @@ async function generateInviteLink() {
       emails: emailList.value,
       sendEmail: false,
       internalUser: false,
+      role: role.value,
     })
     inviteLink.value = resp.data
     showLink.value = true
+    emit('invited')
   })
   if (ret) {
     alert.value = ret
@@ -67,9 +71,15 @@ async function sendInvites() {
       emails: emailList.value,
       sendEmail: true,
       internalUser: false,
+      role: role.value,
     })
     emit('invited')
     dialog.value = false
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Invitation sent to ${emailList.value.join(', ')}`,
+    })
   })
   if (ret) {
     alert.value = ret
@@ -130,16 +140,14 @@ function copyLink() {
       <v-card-actions>
         <v-spacer />
         <v-btn
-          color="grey"
           variant="text"
           @click="dialog = false"
           :disabled="loading"
         >
-          Cancel
+          {{ showLink ? "Close" : "Cancel" }}
         </v-btn>
         <v-btn
           v-if="!showLink"
-          color="secondary"
           @click="generateInviteLink"
           :loading="loading"
           :disabled="loading || !isValid || !emails"
@@ -147,7 +155,7 @@ function copyLink() {
           Get Invite Link
         </v-btn>
         <v-btn
-          color="primary"
+          v-if="!showLink"
           @click="sendInvites"
           :loading="loading"
           :disabled="loading || !isValid || !emails"

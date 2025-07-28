@@ -61,6 +61,14 @@ const routes = [
     component: Login,
     props: true // Passing route params as props
   },
+  {
+    path: '/invite',
+    name: 'invite',
+    component: Login,
+    props: (route: any) => ({
+      inviteCode: route.query.code,
+    })
+  },
   { path: '/no-service', component: NoService },
   {
     path: '/oauth-success/:sessionID?',

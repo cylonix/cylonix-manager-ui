@@ -32,3 +32,7 @@ export function isMacOS(): boolean {
   // Fallback to userAgent string
   return /Mac OS/.test(navigator.userAgent)
 }
+
+export function shortUUID(uuid: string | undefined): string | undefined {
+  return uuid?.substring(0, 18) + '...'
+}

@@ -52,15 +52,24 @@ const route = useRoute()
 
 interface Props {
   sessionID?: string
+  inviteCode?: string
 }
 const props = defineProps<Props>()
 
-// Watch effect to handle the session ID
 watch(
   () => props.sessionID || route.params.sessionID,
   async (sessionID) => {
     if (sessionID) {
       console.log('Session ID:', sessionID)
+    }
+  },
+  { immediate: true }
+)
+watch(
+  () => props.inviteCode || route.params.inviteCode,
+  async (inviteCode) => {
+    if (inviteCode) {
+      console.log('Code:', inviteCode)
     }
   },
   { immediate: true }
@@ -104,14 +113,15 @@ async function submit() {
   let credential = password.value
   loading.value = true
 
-  console.log('sessionID', props.sessionID)
+  console.log('SessionID', props.sessionID ?? "Not set", 'Code', props.inviteCode)
   if (type !== LoginType.Username) {
     try {
       const ret = await loginAPI.getOauthRedirectURL(
         undefined,
         undefined,
         loginID,
-        props.sessionID
+        props.sessionID,
+        props.inviteCode,
       )
       if (ret.data.isDirectLoginWithPassword) {
         loginType.value = LoginType.Username
@@ -148,7 +158,7 @@ async function submit() {
       namespace.value,
       loginID,
       props.sessionID,
-      undefined,
+      props.inviteCode,
       credential,
       undefined,
       undefined,
@@ -226,6 +236,12 @@ function changed() {
   }
 }
 
+function emailChanged() {
+  changed()
+  loginType.value = undefined
+  mfaNeeded.value = []
+}
+
 onMounted(() => {
   // Reset user store state when login component mounts
   userStore.$reset()
@@ -252,7 +268,7 @@ onMounted(() => {
         <EmailInput
           v-if="loginType != LoginType.Phone"
           v-model="username"
-          @change="changed"
+          @change="emailChanged"
           @submit="submit"
         />
         <PasswordInput
@@ -301,12 +317,21 @@ onMounted(() => {
           <p class="my-3 text-body-2 text-center d-block">OR</p>
         </v-col>
       </v-row>
-      <GoogleSignIn :sessionID="sessionID" v-model:alert="alert" />
-      <AppleSignin :sessionID="sessionID" v-model:alert="alert" />
+      <GoogleSignIn
+        :sessionID="sessionID"
+        :inviteCode="inviteCode"
+        v-model:alert="alert"
+      />
+      <AppleSignin
+        :sessionID="sessionID"
+        :inviteCode="inviteCode"
+        v-model:alert="alert"
+      />
       <v-row justify="center">
         <v-col cols="12">
           <p class="my-2 text-body-2 text-center d-block">
-          Sign in for first time user will sign up automatically</p>
+            Sign in for first time user will sign up automatically
+          </p>
         </v-col>
       </v-row>
       <v-row class="mt-2" justify="center">
@@ -328,9 +353,7 @@ onMounted(() => {
 
       <v-row justify="center">
         <v-col cols="12">
-          <p
-            class="text-caption text-center text-grey-darken-1 d-block"
-          >
+          <p class="text-caption text-center text-grey-darken-1 d-block">
             By continuing, you agree to our
             <router-link to="/terms-of-service" class="text-link">
               Terms of Service

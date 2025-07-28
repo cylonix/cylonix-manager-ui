@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { PredefinedRoles } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
+import { newToast } from '@/plugins/toast'
 
 const props = defineProps<{
   modelValue: boolean
@@ -13,11 +15,11 @@ const emit = defineEmits(['update:modelValue', 'sent'])
 const alert = ref<Alert>()
 const loading = ref(false)
 const emails = ref('')
-const role = ref('member')
+const role = ref<PredefinedRoles>(PredefinedRoles.Member)
 
 const roles = [
-  { title: 'Network Admin', value: 'network_admin' },
-  { title: 'Member', value: 'member' },
+  { title: 'Network Admin', value: PredefinedRoles.NetworkAdmin },
+  { title: 'Member', value: PredefinedRoles.Member },
 ]
 
 const dialog = computed({
@@ -47,9 +49,15 @@ async function sendInvites() {
       emails: emailList.value,
       sendEmail: true,
       internalUser: true,
+      role: role.value,
     })
     emit('sent')
     dialog.value = false
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Welcome email sent to ${emailList.value.join(', ')}`,
+    })
   })
   if (ret) {
     alert.value = ret
@@ -90,7 +98,6 @@ async function sendInvites() {
       <v-card-actions>
         <v-spacer />
         <v-btn
-          color="grey"
           variant="text"
           @click="dialog = false"
           :disabled="loading"

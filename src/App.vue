@@ -17,6 +17,7 @@ import {
 import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 import { useUserStore } from './stores/user'
 
 use([
@@ -29,11 +30,19 @@ use([
   TooltipComponent,
 ])
 
+const { lgAndUp } = useDisplay()
 const drawer = ref(false)
+
 const route = useRoute()
 const router = useRouter()
 const store = useUserStore()
 const { loggedIn } = storeToRefs(store)
+
+// Watch for screen size changes
+watch(lgAndUp, (isLarge) => {
+  drawer.value = isLarge && loggedIn.value
+  console.log("loggedIn.value", loggedIn.value, "drawer", drawer.value, "isLarge", isLarge)
+})
 
 watch(loggedIn, (newValue) => {
   if (!newValue && route.meta && route.meta.requiresAuth) {
@@ -41,6 +50,12 @@ watch(loggedIn, (newValue) => {
       `User not logged in, redirecting to login page from ${route.path}`
     )
     router.push('/login')
+  }
+  if (!drawer.value && newValue && lgAndUp.value) {
+    drawer.value = true
+  }
+  if (!newValue) {
+    drawer.value = false // Close the drawer if user logs out
   }
 })
 onMounted(() => {

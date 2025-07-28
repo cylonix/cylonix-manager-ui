@@ -6,11 +6,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { decamelize } from '@cylonix/humps'
 import { V1User } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
+import { shortUUID } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -26,8 +28,8 @@ const headers = ref([
 const adminViewHeaders = ref([
   { title: 'ID', key: 'id' },
   { title: 'Enterprise ID', key: 'namespace' },
-  { title: 'Stable ID', key: 'name' },
-  { title: 'User ID', key: 'userID' },
+  { title: 'User ID', key: 'name', value: (item: any) => shortUUID(item.name) },
+  { title: 'Network', key: 'network' },
   ...headers.value,
 ] as const)
 
@@ -40,6 +42,7 @@ const note = ref('')
 const search = ref('')
 const serverItems = ref<V1User[]>()
 const totalItems = ref(0)
+const userInvitesRef = ref()
 const welcomeDialog = ref(false)
 
 const store = useUserStore()
@@ -121,6 +124,10 @@ async function loadItems(options: any) {
   }
 
   const ret = await tryRequest(async () => {
+    var sortKey = options.sortBy[0]?.key
+    if (sortKey) {
+      sortKey = decamelize(sortKey)
+    }
     const ret = await vpnAPI.headscaleServiceListUsers(
       isAdmin.value || isNetworkAdmin ? undefined : uID,
       [],
@@ -128,11 +135,12 @@ async function loadItems(options: any) {
       isAdmin.value ? undefined : isNetworkAdmin ? network : undefined,
       undefined,
       undefined,
-      options.sortBy[0]?.key /* sortBy */,
+      sortKey,
       options.sortBy[0]?.order == 'desc' ? true : false,
       options.page,
       options.itemsPerPage
     )
+    totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.users ?? []
     console.log('users:', serverItems.value, ret?.data)
   })
@@ -144,14 +152,18 @@ async function loadItems(options: any) {
 }
 
 function confirmDeleteText(item: V1User): string {
-  return `Delete user with ID "${item.id} ${item.loginName}"?`
+  return `Delete user "${item.loginName}" (ID: ${item.id})?`
+}
+
+function invitesSent() {
+  userInvitesRef.value?.loadItems(userInvitesRef.value?.loadOptions)
 }
 </script>
 <template>
   <v-container>
     <Alert v-model="alert"></Alert>
-    <v-row v-if="isNetworkAdmin" class="my-4">
-      <v-col cols="5" xs="12">
+    <v-row v-if="isNetworkAdmin" class="mt-4">
+      <v-col cols="12" md="5">
         <v-sheet
           class="invite-container pa-4 h-100 d-flex flex-column"
           elevation="0"
@@ -161,9 +173,8 @@ function confirmDeleteText(item: V1User): string {
           <div>
             <h3 class="text-h6 mb-2">Add Users of {{ organization }}</h3>
             <p class="text-body-1">
-              Add other users from {{ organization }} to your Cylonix
-              network. They'll receive a welcome email with instructions to get
-              started.
+              Add other users from {{ organization }} to your Cylonix network.
+              They'll receive a welcome email with instructions to get started.
             </p>
           </div>
           <v-spacer></v-spacer>
@@ -178,7 +189,7 @@ function confirmDeleteText(item: V1User): string {
           >
         </v-sheet>
       </v-col>
-      <v-col cols="5" xs="12">
+      <v-col cols="12" md="5">
         <v-sheet
           class="invite-container pa-4 h-100 d-flex flex-column"
           elevation="0"
@@ -205,7 +216,7 @@ function confirmDeleteText(item: V1User): string {
           >
         </v-sheet>
       </v-col>
-      <v-col cols="2" xs="12">
+      <v-col cols="12" md="2">
         <v-sheet
           class="pa-4 h-100 d-flex flex-column"
           elevation="0"
@@ -236,39 +247,55 @@ function confirmDeleteText(item: V1User): string {
         </v-sheet>
       </v-col>
     </v-row>
-    <v-row class="mx-2 my-1" align="center" justify="space-between">
-      <v-chip size="large">Users</v-chip>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
-    </v-row>
-    <v-data-table-server
-      v-model:items-per-page="itemsPerPage"
-      class="mt-2"
-      :headers="isSysAdmin ? adminViewHeaders : headers"
-      :hide-default-footer="itemsPerPage >= totalItems"
-      :items="serverItems"
-      :items-length="totalItems"
-      :loading="loading"
-      :search="search"
-      @update:options="loadItems"
+    <v-sheet
+      v-if="isNetworkAdmin || isAdmin"
+      class="mt-4 pa-4 h-100 d-flex flex-column"
+      elevation="0"
+      rounded="lg"
+      border
     >
-      <template v-slot:item.actions="{ item }">
-        <DeleteButton
-          v-model:note="note"
-          :confirmDeleteText="confirmDeleteText(item)"
-          @delete="deleteItem(item)"
-        >
-        </DeleteButton>
-      </template>
-    </v-data-table-server>
+      <UserInvites ref="userInvitesRef"></UserInvites>
+    </v-sheet>
+    <v-sheet
+      class="mt-4 pa-4 h-100 d-flex flex-column"
+      elevation="0"
+      rounded="lg"
+      border
+    >
+      <v-row class="mx-2 my-1" align="center" justify="space-between">
+        <h3 class="text-h6 mb-2">Users</h3>
+        <RefreshButton @refresh="loadItems(loadOptions)" />
+      </v-row>
+      <v-data-table-server
+        v-model:items-per-page="itemsPerPage"
+        class="mt-2"
+        :headers="isSysAdmin ? adminViewHeaders : headers"
+        :hide-default-footer="itemsPerPage >= totalItems"
+        :items="serverItems"
+        :items-length="totalItems"
+        :loading="loading"
+        :search="search"
+        @update:options="loadItems"
+      >
+        <template v-slot:item.actions="{ item }">
+          <DeleteButton
+            v-model:note="note"
+            :confirmDeleteText="confirmDeleteText(item)"
+            @delete="deleteItem(item)"
+          >
+          </DeleteButton>
+        </template>
+      </v-data-table-server>
+    </v-sheet>
   </v-container>
   <SendWelcomeEmailDialog
     v-model="welcomeDialog"
     :organization="organization"
-    @send="loadItems(loadOptions)"
+    @sent="invitesSent"
   ></SendWelcomeEmailDialog>
   <InviteExternalUserDialog
     v-model="inviteDialog"
-    @send="loadItems(loadOptions)"
+    @invited="invitesSent"
   ></InviteExternalUserDialog>
 </template>
 

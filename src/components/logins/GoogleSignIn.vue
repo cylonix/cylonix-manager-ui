@@ -14,20 +14,23 @@ import type { Alert } from '@/plugins/alert'
 import { loginAPI, tryRequest } from '@/plugins/api'
 import getEnv from '@/utils/env'
 const alert = defineModel<Alert>('alert')
-const props = defineProps(['sessionID'])
+const props = defineProps(['sessionID', 'inviteCode'])
 const loading = ref(false)
 
 async function loginWithGoogle() {
   loading.value = true
+  console.log("invite code", props.inviteCode)
+  console.log("sessionID", props.sessionID)
   const err = await tryRequest(async () => {
     const ret = await loginAPI.getOauthRedirectURL(
       'google',
       undefined,
       undefined,
       props.sessionID,
+      props.inviteCode,
       undefined,
       undefined,
-      getEnv('VITE_LOGIN_REDIRECT_BASE_URL') + '/' + props.sessionID
+      getEnv('VITE_LOGIN_REDIRECT_BASE_URL') + '/' + (props.sessionID ?? '')
     )
     if (ret.data.encodedRedirectURL) {
       window.location.href = ret.data.encodedRedirectURL

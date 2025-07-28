@@ -119,6 +119,7 @@ declare module 'vue' {
     UpdateUserNetworkDomainDialog: typeof import('./src/components/dialogs/UpdateUserNetworkDomainDialog.vue')['default']
     UserApprovals: typeof import('./src/components/approvals/UserApprovals.vue')['default']
     UserCountCard: typeof import('./src/components/charts/UserCountCard.vue')['default']
+    UserInvites: typeof import('./src/components/users/UserInvites.vue')['default']
     UsernameInput: typeof import('./src/components/inputs/UsernameInput.vue')['default']
     UsernamePasswordInput: typeof import('./src/components/inputs/UsernamePasswordInput.vue')['default']
     Users: typeof import('./src/components/Users.vue')['default']

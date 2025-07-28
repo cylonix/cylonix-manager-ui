@@ -15,7 +15,6 @@ import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
 import { useUserStore } from '@/stores/user'
-import MoreButton from '../buttons/MoreButton.vue'
 
 const router = useRouter()
 const { setCurrentNode } = useCurrentNode()
@@ -209,7 +208,6 @@ const itemsPerPage = computed(() => {
 })
 const loading = ref(false)
 const loadOptions = ref()
-const networkDomain = ref('')
 const search = ref('')
 const serverItems = ref<V1Node[]>()
 const totalItems = ref(0)
@@ -258,10 +256,6 @@ async function loadItems(options: any) {
     )
     totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.nodes ?? []
-    if (serverItems.value.length > 0) {
-      const node = serverItems.value[0]
-      networkDomain.value = node?.networkDomain ?? ''
-    }
     console.log('nodes:', serverItems.value, ret?.data)
   })
   if (ret) {
@@ -290,13 +284,14 @@ const headers = computed(() => {
   <v-container>
     <Alert v-model="alert"></Alert>
     <v-row class="mx-2 my-1" align="center" justify="space-between">
-      <v-col cols="6">
+      <v-col>
         <v-chip size="large">Machines</v-chip>
-        <v-chip v-if="!isSysAdmin && networkDomain" variant="text"
-          >{{ networkDomain }}
+        <v-chip size="large" class="mx-2 text-bold">{{ totalItems }}</v-chip>
+        <v-chip v-if="!isSysAdmin" variant="text"
+          >Network Domain: {{ user?.networkDomain }}
         </v-chip>
       </v-col>
-      <v-col cols="6" justify="end" class="text-right"
+      <v-col justify="end" class="text-right"
         ><RefreshButton @refresh="loadItems(loadOptions)"
       /></v-col>
     </v-row>
