@@ -13,6 +13,8 @@ import Devices from '@/components/Devices.vue'
 import DeviceApprovals from '@/components/approvals/DeviceApprovals.vue'
 import Labels from '@/components/Labels.vue'
 import Login from '@/components/Login.vue'
+import LoginApproval from '@/components/logins/LoginApproval.vue'
+import LoginError from '@/components/logins/LoginError.vue'
 import NoService from '@/components/NoService.vue'
 import OauthSuccess from '@/components/logins/OauthSuccess.vue'
 import Policies from '@/components/Policies.vue'
@@ -67,6 +69,22 @@ const routes = [
     component: Login,
     props: (route: any) => ({
       inviteCode: route.query.code,
+    })
+  },
+  {
+    path: '/303/login/approval',
+    name: 'login-approval',
+    component: LoginApproval,
+    props: (route: any) => ({
+      approvalState: route.query.state,
+    })
+  },
+  {
+    path: '/303/login/error',
+    name: 'login-error',
+    component: LoginError,
+    props: (route: any) => ({
+      error: route.query.error,
     })
   },
   { path: '/no-service', component: NoService },
