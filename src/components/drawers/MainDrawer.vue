@@ -193,6 +193,21 @@ function updateRail() {
         title="Applications"
         to="/apps"
       ></v-list-item>
+      <v-list-group v-if="loggedIn">
+        <template v-slot:activator="{ props }">
+          <v-list-item
+            v-bind="props"
+            prepend-icon="mdi-cog-outline"
+            title="Settings"
+          ></v-list-item>
+        </template>
+        <v-list-item
+          title="Delete Account"
+          to="/delete-account"
+          prepend-icon="mdi-delete-outline"
+          base-color="error"
+        ></v-list-item>
+      </v-list-group>
       <v-list-item
         prepend-icon="mdi-information-outline"
         title="About"

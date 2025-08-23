@@ -9,6 +9,7 @@ import Approvals from '@/components/Approvals.vue'
 import Apps from '@/components/Apps.vue'
 import ConfirmSession from '@/components/logins/ConfirmSession.vue'
 import Dashboard from '@/components/Dashboard.vue'
+import DeleteAccount from '@/components/settings/DeleteAccount.vue'
 import Devices from '@/components/Devices.vue'
 import DeviceApprovals from '@/components/approvals/DeviceApprovals.vue'
 import Labels from '@/components/Labels.vue'
@@ -50,6 +51,7 @@ const routes = [
   { path: '/apps', component: Apps, meta: { requiresAuth: true } },
   { path: '/confirm-session', component: ConfirmSession, meta: { requiresAuth: true } },
   { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
+  { path: '/delete-account', component: DeleteAccount, meta: { requiresAuth: true } },
   { path: '/devices', component: Devices, meta: { requiresAuth: true } },
   {
     path: '/device-approvals',

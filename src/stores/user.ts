@@ -18,6 +18,9 @@ export const useUserStore = defineStore(
     const isNetworkAdmin = computed(() => {
       return user.value?.roles?.includes('network-admin') && adminContext.value
     })
+    const isNetworkOwner = computed(() => {
+      return user.value?.roles?.includes('network-owner') && adminContext.value
+    })
     const isAdmin = computed(() => {
       return user.value?.isAdmin && adminContext.value
     })
@@ -60,6 +63,7 @@ export const useUserStore = defineStore(
       apiKey,
       isAdmin,
       isNetworkAdmin,
+      isNetworkOwner,
       isSysAdmin,
       loggedIn,
       loginConfirmSession,
