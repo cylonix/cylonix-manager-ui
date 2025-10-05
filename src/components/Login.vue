@@ -53,6 +53,7 @@ const route = useRoute()
 interface Props {
   sessionID?: string
   inviteCode?: string
+  redirect?: string
 }
 const props = defineProps<Props>()
 
@@ -178,6 +179,11 @@ async function submit() {
     if (ret.data.confirmSession) {
       console.log('confirm session', ret.data.confirmSession)
       router.push('/confirm-session')
+      return
+    }
+    console.log('redirecting to', props.redirect ?? '/')
+    if (props.redirect) {
+      router.push(props.redirect)
       return
     }
     router.push('/')

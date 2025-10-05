@@ -38,8 +38,8 @@ const props = defineProps({
 })
 
 const cardMinWidth = computed(() => {
-  console.log('min', props.minWidth ?? (mdAndUp.value ? '800' : '400'))
-  return props.minWidth ?? (mdAndUp.value ? '800' : '400')
+  console.log('min', props.minWidth ?? (mdAndUp.value ? '600' : '300'))
+  return props.minWidth ?? (mdAndUp.value ? '600' : '300')
 })
 
 const dialog = defineModel<boolean>()

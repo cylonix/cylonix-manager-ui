@@ -36,3 +36,71 @@ export function isMacOS(): boolean {
 export function shortUUID(uuid: string | undefined): string | undefined {
   return uuid?.substring(0, 18) + '...'
 }
+
+export function parseKeyValueString(input: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  let currentKey = '';
+  let currentValue = '';
+  let isInQuotes = false;
+  let isParsingKey = true;
+  let i = 0;
+
+  while (i < input.length) {
+    const char = input[i];
+
+    if (char === '"' && input[i - 1] !== '\\') {
+      isInQuotes = !isInQuotes;
+      i++;
+      continue;
+    }
+
+    if (isInQuotes) {
+      currentValue += char;
+      i++;
+      continue;
+    }
+
+    if (char === '=' && isParsingKey) {
+      isParsingKey = false;
+      i++;
+      continue;
+    }
+
+    if (char === ' ' && !isInQuotes && !isParsingKey) {
+      if (currentKey) {
+        result[currentKey] = currentValue;
+        currentKey = '';
+        currentValue = '';
+        isParsingKey = true;
+      }
+      i++;
+      continue;
+    }
+
+    if (isParsingKey) {
+      currentKey += char;
+    } else {
+      currentValue += char;
+    }
+    i++;
+  }
+
+  // Handle the last key-value pair
+  if (currentKey && currentValue) {
+    result[currentKey] = currentValue;
+  } else if (currentKey) {
+    result[currentKey] = '';
+  }
+
+  return result;
+}
+
+export function parseKVorJSON(s?: string) {
+  if (s) {
+    try {
+      return JSON.parse(s)
+    } catch (e) {
+      return parseKeyValueString(s)
+    }
+  }
+}

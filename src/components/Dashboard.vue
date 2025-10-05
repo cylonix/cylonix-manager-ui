@@ -4,11 +4,12 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 import { userAPI, tryRequest } from '@/plugins/api'
 import type { Alert } from '@/plugins/alert'
+import RefreshButton from './buttons/RefreshButton.vue'
 
 //import { formatDistance } from 'date-fns'
 
@@ -18,10 +19,29 @@ const { isNetworkAdmin, isAdmin } = storeToRefs(useUserStore())
 // Stats
 const deviceStats = ref({
   total: 0,
+  online: 0,
+  offline: 0,
 })
 const userStats = ref({
   total: 0,
+  online: 0,
+  offline: 0,
 })
+
+const userPieChartItems = ref([
+  { key: 'online', title: 'Online', value: 0, color: 'green' },
+  { key: 'offline', title: 'Offline', value: 0, color: 'grey' },
+])
+const devicePieChartItems = ref([
+  { key: 'online', title: 'Online', value: 0, color: 'green' },
+  { key: 'offline', title: 'Offline', value: 0, color: 'grey' },
+])
+
+// Loading states for refresh buttons
+const loadingUserStats = ref(false)
+
+// Timer for automatic refresh
+let refreshTimer: number | null = null
 
 // Config history
 //const configHistory = ref([])
@@ -37,6 +57,7 @@ async function fetchDashboardData() {
 
 const alert = ref<Alert>({ on: false })
 async function fetchUserStats() {
+  loadingUserStats.value = true
   const ret = await tryRequest(async () => {
     const stats = await userAPI.getUserSummary()
     console.log('User stats:', stats)
@@ -45,14 +66,50 @@ async function fetchUserStats() {
     }
     deviceStats.value = {
       total: stats.data[0]?.deviceCount ?? 0,
+      online: stats.data[0]?.onlineDeviceCount ?? 0,
+      offline:
+        (stats.data[0]?.deviceCount ?? 0) -
+        (stats.data[0]?.onlineDeviceCount ?? 0),
     }
     userStats.value = {
       total: stats.data[0]?.userCount ?? 0,
+      online: stats.data[0]?.onlineUserCount ?? 0,
+      offline:
+        (stats.data[0]?.userCount ?? 0) - (stats.data[0]?.onlineUserCount ?? 0),
     }
+    devicePieChartItems.value = [
+      {
+        key: 'online',
+        title: 'Online',
+        value: deviceStats.value.online,
+        color: 'green',
+      },
+      {
+        key: 'offline',
+        title: 'Offline',
+        value: deviceStats.value.offline,
+        color: 'grey',
+      },
+    ]
+    userPieChartItems.value = [
+      {
+        key: 'online',
+        title: 'Online',
+        value: userStats.value.online,
+        color: 'green',
+      },
+      {
+        key: 'offline',
+        title: 'Offline',
+        value: userStats.value.offline,
+        color: 'grey',
+      },
+    ]
   })
   if (ret) {
     alert.value = ret
   }
+  loadingUserStats.value = false
 }
 
 async function fetchPendingApprovals() {
@@ -84,8 +141,30 @@ async function fetchConfigHistory() {
 //  return formatDistance(new Date(timestamp), new Date(), { addSuffix: true })
 //}
 
+function startAutoRefresh() {
+  refreshTimer = setInterval(() => {
+    fetchDashboardData()
+  }, 30000) // 30 seconds
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+const numberFormatter = new Intl.NumberFormat('en', { useGrouping: true })
+function formatNumber(v: any) {
+  return numberFormatter.format(v)
+}
+const legendConfig = ref({ position: 'right' as const })
 onMounted(() => {
   fetchDashboardData()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
@@ -100,20 +179,74 @@ onMounted(() => {
 
     <!-- Stats Cards -->
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col cols="12" lg="6">
         <v-card>
           <v-card-title class="text-h6">Total Devices</v-card-title>
           <v-card-text>
             <div class="text-h4">{{ deviceStats.total }}</div>
           </v-card-text>
+          <v-pie
+            :items="devicePieChartItems"
+            :legend="legendConfig"
+            :tooltip="{
+              subtitleFormat: (s) =>
+                `${s.value} devices (${(
+                  (100 * s.value) /
+                  deviceStats.total
+                ).toFixed(1)}%)`,
+            }"
+            inner-cut="75"
+            size="300"
+            animation
+            hide-slice
+          >
+            <template v-slot:legend-text="{ item }">
+              <div class="d-flex ga-6">
+                <div>{{ item.title }}</div>
+                <div class="ml-auto font-weight-bold">
+                  {{ formatNumber(item.value) }}
+                </div>
+              </div>
+            </template>
+          </v-pie>
+          <v-card-actions class="justify-end"
+            ><RefreshButton @click="fetchUserStats" :loading="loadingUserStats"
+          /></v-card-actions>
         </v-card>
       </v-col>
-      <v-col v-if="isNetworkAdmin || isAdmin" cols="12" md="6">
+      <v-col v-if="isNetworkAdmin || isAdmin" cols="12" lg="6">
         <v-card>
           <v-card-title class="text-h6">Total Users</v-card-title>
           <v-card-text>
             <div class="text-h4">{{ userStats.total }}</div>
           </v-card-text>
+          <v-pie
+            :items="userPieChartItems"
+            :legend="legendConfig"
+            :tooltip="{
+              subtitleFormat: (s) =>
+                `${formatNumber(s.value)} users (${(
+                  (100 * s.value) /
+                  userStats.total
+                ).toFixed(1)}%)`,
+            }"
+            inner-cut="75"
+            size="300"
+            animation
+            hide-slice
+          >
+            <template v-slot:legend-text="{ item }">
+              <div class="d-flex ga-6">
+                <div>{{ item.title }}</div>
+                <div class="ml-auto font-weight-bold">
+                  {{ formatNumber(item.value) }}
+                </div>
+              </div>
+            </template>
+          </v-pie>
+          <v-card-actions class="justify-end"
+            ><RefreshButton @click="fetchUserStats" :loading="loadingUserStats"
+          /></v-card-actions>
         </v-card>
       </v-col>
     </v-row>

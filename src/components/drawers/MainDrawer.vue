@@ -202,6 +202,7 @@ function updateRail() {
           ></v-list-item>
         </template>
         <v-list-item
+          v-if="!isSysAdmin && !isAdmin"
           title="Delete Account"
           to="/delete-account"
           prepend-icon="mdi-delete-outline"

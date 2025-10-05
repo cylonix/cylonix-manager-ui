@@ -18,7 +18,7 @@ import { mdi as mdiSvg } from 'vuetify/iconsets/mdi-svg'
 import { createVuetify } from 'vuetify'
 
 // Labs
-import { VNumberInput } from 'vuetify/labs/VNumberInput'
+import { VPie } from 'vuetify/labs/VPie'
 
 // Env
 import getEnv from '@/utils/env'
@@ -27,7 +27,7 @@ import getEnv from '@/utils/env'
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
   components: {
-    VNumberInput
+    VPie
   },
   defaults: {
     VCard: {

@@ -43,6 +43,15 @@ const headers = ref([
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
+const resourceHeaders = ref([
+  { title: 'ID', key: 'Id' },
+  { title: 'Active', key: 'active', align: 'center' },
+  {
+    title: 'Config',
+    key: 'config',
+  },
+] as const)
+
 onMounted(() => {
   loadSystemPops()
   loadPopResources()
@@ -267,11 +276,26 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
       v-for="i in popResources"
       v-model:items-per-page="itemsPerPage"
       density="comfortable"
+      :headers="resourceHeaders"
       :items="i.userPopResources"
       :items-length="i.userPopResources?.length"
       :loading="loading"
       :search="search"
-    ></v-data-table>
+    >
+      <template v-slot:item.config="{ item }">
+        <v-chip>
+          <span>{{ item.config.name }}</span>
+          <v-menu class="mt-2" activator="parent">
+            <v-card class="pt-4 px-2"
+              ><v-card-item
+                ><v-data-table :items="[item.config]" hide-default-footer>
+                  <template
+                    v-slot:bottom
+                  ></template></v-data-table></v-card-item
+            ></v-card>
+          </v-menu> </v-chip
+      ></template>
+    </v-data-table>
     <AddSupervisorPopToNamespaceDialog
       v-model="addPopDialog"
       :namespace="namespace"

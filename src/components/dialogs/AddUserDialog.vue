@@ -4,13 +4,16 @@
 -->
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import isEmail from 'validator/es/lib/isEmail'
 import { useDisplay } from 'vuetify'
 import { VForm } from 'vuetify/components'
 import { LoginType, User, UserLogin } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
+import { useUserStore } from '@/stores/user'
 
 defineProps<{
   withNamespace?: boolean
@@ -22,19 +25,27 @@ const emit = defineEmits(['added'])
 
 const { lgAndUp } = useDisplay()
 
+const store = useUserStore()
+const { isAdmin, isSysAdmin } = storeToRefs(store)
+const defaultNamespace = computed(() => {
+  if (isSysAdmin.value) {
+    return "default"
+  }
+  return isAdmin.value ? store.user?.namespace : undefined
+})
+
 const alert = ref<Alert>({ on: false })
 const email = ref()
 const form = ref<InstanceType<typeof VForm>>()
 const isFormValid = ref(false)
 const loading = ref(false)
 const name = ref('')
-const namespace = ref()
+const namespace = ref(defaultNamespace)
 const phone = ref('')
 const password = ref()
 const rolesSelected = ref()
 const roles = ref()
 const username = ref()
-const userID = ref()
 const networkDomain = ref()
 
 const ready = computed(() => {
@@ -43,6 +54,14 @@ const ready = computed(() => {
 
 onMounted(async () => {
   await loadUserRoles()
+})
+
+var emailSyncFromUsername = false
+watch(username, (newUsername) => {
+  if (newUsername && isEmail(newUsername) && (!email.value || emailSyncFromUsername)) {
+    email.value = newUsername
+    emailSyncFromUsername = true
+  }
 })
 
 async function loadUserRoles() {
@@ -62,7 +81,7 @@ async function addUser() {
     loading.value = true
     await userAPI.postUser(
       <User>{
-        userID: userID.value,
+        userID: "00000000-0000-0000-0000-000000000000", // nil userID to be set by the backend
         networkDomain: networkDomain.value,
         displayName: name.value,
         email: email.value,
@@ -112,7 +131,7 @@ const phoneRequired = computed(() => {
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="add-user">
-        <v-row>
+        <v-row class="my-2">
           <v-col sm="12" lg="6">
             <NamespaceInput
               v-if="withNamespace"
@@ -134,7 +153,6 @@ const phoneRequired = computed(() => {
               requiredMessage="Phone or email is required"
               :required="emailRequired"
             />
-            <NameInput v-model="userID" min="36" max="36" label="User ID" />
           </v-col>
           <v-col sm="12" lg="6">
             <UsernameInput v-if="withUsername" v-model="username" />

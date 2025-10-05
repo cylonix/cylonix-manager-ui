@@ -6,7 +6,7 @@ import { newToast } from '@/plugins/toast'
 import { useNoticeStore } from '@/stores/notices'
 import { useUserStore } from '@/stores/user'
 
-export async function logout() {
+export async function logout(ignoreErrors = false) {
   const userStore = useUserStore()
   const noticeStore = useNoticeStore()
   if (!userStore.loggedIn) {
@@ -31,7 +31,7 @@ export async function logout() {
       throw `${e1} ${e2}`
     }
   })
-  if (ret) {
+  if (ret && !ignoreErrors) {
     newToast({
       on: true,
       color: 'red',

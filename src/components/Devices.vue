@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { decamelize } from '@cylonix/humps'
 import {
   Device,
   DeviceUpdate,
@@ -14,6 +15,7 @@ import {
 } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { deviceAPI, labelAPI, tryRequest } from '@/plugins/api'
+import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { hexTo64 } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
@@ -29,6 +31,11 @@ const headers = ref([
   },
   { title: 'IP', key: 'ip', value: (n: any) => n.wgInfo?.addresses[0] },
   { title: 'Public key', key: 'publicKey', align: 'center' },
+  {
+    title: 'Last seen',
+    key: 'lastSeen',
+    value: (item: any) => shortTs(item.lastSeen * 1000),
+  },
   { title: 'Exit node', key: 'exitNode', align: 'center' },
   { title: 'VPN Labels', key: 'vpnLabels', align: 'end' },
   { title: 'Actions', key: 'actions', sortable: false },
@@ -117,6 +124,10 @@ async function loadItems(options: any) {
      * @throws {RequiredError}
      * @memberof DeviceApi
      */
+    var sortBy = options.sortBy[0]?.key
+    if (sortBy) {
+      sortBy = decamelize(sortBy)
+    }
     const ret = await deviceAPI.getDevices(
       getApiUserID(),
       undefined /* device id */,
@@ -126,7 +137,7 @@ async function loadItems(options: any) {
       undefined /* contain */,
       options.page,
       options.itemsPerPage,
-      options.sortBy[0]?.key /* sortBy */,
+      sortBy /* sortBy */,
       options.sortBy[0]?.order /* sortDesc */
     )
     totalItems.value = ret?.data.total ?? 0

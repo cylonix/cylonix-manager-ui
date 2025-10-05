@@ -52,6 +52,14 @@ const routes = [
   { path: '/confirm-session', component: ConfirmSession, meta: { requiresAuth: true } },
   { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/delete-account', component: DeleteAccount, meta: { requiresAuth: true } },
+  {
+    path: '/delete-account-with-login',
+    name: "delete-account-with-login",
+    component: Login,
+    props: (route: any) => ({
+      redirect: '/delete-account',
+    })
+  },
   { path: '/devices', component: Devices, meta: { requiresAuth: true } },
   {
     path: '/device-approvals',

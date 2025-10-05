@@ -11,6 +11,7 @@ import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
+import { parseKVorJSON } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
@@ -65,19 +66,13 @@ function shortID(id?: string): string | undefined {
 }
 function shortMessage(message?: string): string | undefined {
   const m = messageJson(message)
-  if (m) {
+  if (m && m.message) {
     return m.message.substring(0, 12) + '...'
   }
   return message?.substring(0, 12) + '...'
 }
 function messageJson(message?: string) {
-  if (message) {
-    try {
-      return JSON.parse(message)
-    } catch (e) {
-      //console.log('failed to parse message', message)
-    }
-  }
+  return parseKVorJSON(message)
 }
 async function loadItems(options: any) {
   loadOptions.value = options
