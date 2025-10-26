@@ -11,16 +11,10 @@ import {
   IPRouteDeleteInput,
   PopApplyInput,
   PopInstance,
-  PopResource,
   Status,
 } from '@/clients/supervisor/api'
 import type { Alert } from '@/plugins/alert'
-import {
-  supPopAPI,
-  supResourceAPI,
-  supRouteAPI,
-  tryRequest,
-} from '@/plugins/api'
+import { supPopAPI, supRouteAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
@@ -35,26 +29,15 @@ const headers = ref([
   { title: 'ID', key: 'id', align: 'center' },
   { title: 'Name', key: 'name' },
   { title: 'VRF', key: 'vrf' },
-  { title: 'App routes', key: 'app-routes' },
-  { title: 'Bvi', key: 'bvi' },
+  { title: 'BVI', key: 'bvi' },
   { title: 'Routes', key: 'routes' },
   { title: 'Status', key: 'status', align: 'center' },
   { title: 'Tunnels', key: 'tunnels' },
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
-const resourceHeaders = ref([
-  { title: 'ID', key: 'Id' },
-  { title: 'Active', key: 'active', align: 'center' },
-  {
-    title: 'Config',
-    key: 'config',
-  },
-] as const)
-
 onMounted(() => {
   loadSystemPops()
-  loadPopResources()
 })
 
 const addPopDialog = ref(false)
@@ -62,7 +45,6 @@ const addPops = ref<Array<string>>([])
 const addRouteDialog = ref(false)
 const addRoutePop = ref<PopInstance>()
 const allPops = ref<Array<string>>([])
-const popResources = ref<Array<PopResource>>([])
 const itemsPerPage = ref(10)
 const loading = ref(false)
 const note = ref('')
@@ -127,31 +109,8 @@ async function loadSystemPops() {
   loading.value = false
 }
 
-async function loadPopResources() {
-  if (!isSysAdmin.value) {
-    alert.value = {
-      on: true,
-      text: 'Operation is only allowed for system administrators.',
-    }
-    return
-  }
-
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    const ret = await supResourceAPI().getNamespaceResources(props.namespace)
-    popResources.value = ret?.data.popResources ?? []
-    console.log(`${props.namespace} wg resources:`, popResources.value)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading wg resources.')
-  loading.value = false
-}
-
 function refresh() {
   loadSystemPops()
-  loadPopResources()
   emit('refresh')
 }
 
@@ -202,20 +161,20 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
 </script>
 <template>
   <v-container fluid>
-    <v-row class="ma-2" fluid>
+    <v-row class="ma-2">
       <v-chip size="large">Pop Instances of {{ namespace }}</v-chip>
       <v-spacer></v-spacer>
       <AddButton v-if="canAddPop(instances)" @click="addPop"></AddButton>
       <RefreshButton @refresh="refresh" />
     </v-row>
-    <v-row fluid>
+    <v-row>
       <v-col col="12">
         <v-data-table
           v-model:items-per-page="itemsPerPage"
-          density="comfortable"
           :items="instances"
           :items-length="instances.length"
           :headers="headers"
+          :hide-default-footer="instances.length <= itemsPerPage"
           :loading="loading"
           :search="search"
         >
@@ -272,30 +231,6 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
         </v-data-table>
       </v-col>
     </v-row>
-    <v-data-table
-      v-for="i in popResources"
-      v-model:items-per-page="itemsPerPage"
-      density="comfortable"
-      :headers="resourceHeaders"
-      :items="i.userPopResources"
-      :items-length="i.userPopResources?.length"
-      :loading="loading"
-      :search="search"
-    >
-      <template v-slot:item.config="{ item }">
-        <v-chip>
-          <span>{{ item.config.name }}</span>
-          <v-menu class="mt-2" activator="parent">
-            <v-card class="pt-4 px-2"
-              ><v-card-item
-                ><v-data-table :items="[item.config]" hide-default-footer>
-                  <template
-                    v-slot:bottom
-                  ></template></v-data-table></v-card-item
-            ></v-card>
-          </v-menu> </v-chip
-      ></template>
-    </v-data-table>
     <AddSupervisorPopToNamespaceDialog
       v-model="addPopDialog"
       :namespace="namespace"

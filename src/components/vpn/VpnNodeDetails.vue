@@ -197,6 +197,61 @@ async function deleteRoute(route: V1RouteSpec) {
     alert.value = ret
   }
 }
+const addCapDialog = ref(false)
+const addCapAlert = ref<Alert>({ on: false })
+const newCapability = ref('')
+function addCapability() {
+  addCapDialog.value = true
+}
+async function confirmAddCapability() {
+  const nodeID = nodeItem.value?.id
+  if (!nodeID) {
+    addCapAlert.value = {
+      on: true,
+      title: 'Node ID is missing',
+    }
+    return
+  }
+  const capability = newCapability.value.trim()
+  if (!capability) {
+    addCapAlert.value = {
+      on: true,
+      title: 'Capability cannot be empty',
+    }
+    return
+  }
+  if (
+    nodeItem.value?.capabilities &&
+    nodeItem.value.capabilities.includes(capability)
+  ) {
+    addCapAlert.value = {
+      on: true,
+      title: `Node already has capability ${capability}`,
+    }
+    return
+  }
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceUpdateNode(nodeID, {
+      namespace: nodeItem.value?.namespace,
+      addCapabilities: [capability],
+    })
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully added capability ${capability}`,
+    })
+    const resp = await vpnAPI.headscaleServiceGetNode(nodeID)
+    if (!resp || !resp.data.node) {
+      return
+    }
+    setCurrentNode(resp.data.node)
+    newCapability.value = ''
+    addCapDialog.value = false
+  })
+  if (ret) {
+    addCapAlert.value = ret
+  }
+}
 </script>
 <template>
   <v-container v-if="nodeItem">
@@ -414,6 +469,23 @@ async function deleteRoute(route: V1RouteSpec) {
                     >Expired</span
                   ></v-col
                 >
+              </v-row>
+              <v-row class="field-row" v-if="nodeItem.capabilities">
+                <v-col cols="4" class="field-title">Capabilities</v-col>
+                <v-col cols="8" class="field-value"
+                  >
+                  <AddButton
+                    @click="addCapability"
+                    label="Add Capability"
+                  ></AddButton>
+                  <div
+                    v-for="capability in nodeItem.capabilities"
+                    :key="capability"
+                    class="font-monospace"
+                  >
+                    {{ capability }}
+                  </div>
+                </v-col>
               </v-row>
             </v-container>
           </v-card-text>
@@ -674,6 +746,19 @@ async function deleteRoute(route: V1RouteSpec) {
       </v-col>
     </v-row>
   </v-container>
+   <ConfirmDialog v-model="addCapDialog" title="Add Capability" @ok="confirmAddCapability"
+    ><template v-slot:item>
+      <Alert v-model="addCapAlert"></Alert>
+      <v-text-field
+        class="mt-4"
+        v-model="newCapability"
+        label="Capability"
+        placeholder="Enter capability"
+        outlined
+        dense
+      ></v-text-field>
+    </template>
+  </ConfirmDialog>
 </template>
 <style scoped>
 .font-monospace {

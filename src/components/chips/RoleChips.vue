@@ -16,7 +16,11 @@ const props = defineProps<{
 const dialog = ref(false)
 const dialogTitle = ref('')
 const event = ref<'add' | 'delete'>('delete')
-const allRoles = [PredefinedRoles.NetworkAdmin]
+const allRoles = [
+  PredefinedRoles.NetworkAdmin,
+  PredefinedRoles.NetworkOwner,
+  PredefinedRoles.NamespaceAdmin,
+]
 const addRoles = computed(() => {
   const add = allRoles.filter((l) => {
     return !(props.user?.roles?.some((l1) => l1 == l) ?? false)
@@ -42,7 +46,7 @@ function confirmed() {
 </script>
 
 <template>
-  <v-container v-if="(user?.roles?.length ?? 0) > 0" max-width="300px"
+  <v-container class="py-0" v-if="(user?.roles?.length ?? 0) > 0" max-width="300px"
     ><v-chip
       class="d-flex justify-end"
       variant="text"
@@ -63,7 +67,7 @@ function confirmed() {
       <span>{{ n }}</span>
     </v-chip>
   </v-container>
-  <v-container class="d-flex justify-center" v-if="(addRoles?.length ?? 0) > 0">
+  <v-container class="py-0 d-flex justify-center" v-if="(addRoles?.length ?? 0) > 0">
     <v-menu>
       <template v-slot:activator="{ props: menu }">
         <AddButton label="Add role" :parent-props="menu" />

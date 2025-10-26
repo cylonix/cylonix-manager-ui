@@ -30,7 +30,7 @@ const headers = ref([
     value: (n: any) => n.userShortInfo.displayName,
   },
   { title: 'IP', key: 'ip', value: (n: any) => n.wgInfo?.addresses[0] },
-  { title: 'Public key', key: 'publicKey', align: 'center' },
+  { title: 'Public key', key: 'publicKey'},
   {
     title: 'Last seen',
     key: 'lastSeen',
@@ -48,13 +48,16 @@ const sysAdminViewHeaders = ref([
 
 const addDialog = ref(false)
 const alert = ref<Alert>({ on: false })
+const filterEnterpriseID = ref()
+const filterUser = ref()
+const filterOnlineOnly = ref()
 const itemsPerPage = ref(10)
 const label = ref<Label>()
 const loading = ref(false)
 const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<Device[]>()
+const serverItems = ref<Device[]>([])
 const totalItems = ref(0)
 const vpnLabels = ref<Array<Label>>()
 
@@ -124,21 +127,49 @@ async function loadItems(options: any) {
      * @throws {RequiredError}
      * @memberof DeviceApi
      */
-    var sortBy = options.sortBy[0]?.key
-    if (sortBy) {
-      sortBy = decamelize(sortBy)
+    let sortBy: string | undefined
+    let sortDesc: string | undefined
+    for (const [i, sort] of options.sortBy.entries()) {
+      if (i === 0) {
+        sortBy = decamelize(sort.key)
+        sortDesc = sort.order ?? ''
+      } else {
+        sortBy = sortBy + ',' + decamelize(sort.key)
+        sortDesc = sortDesc + ',' + (sort.order ?? '')
+      }
     }
+
+    let filterBy: string | undefined
+    let filterValue: string | undefined
+
+    const filterFields: string[] = []
+    const filterValues: string[] = []
+
+    if (filterEnterpriseID.value) {
+      filterFields.push('namespace')
+      filterValues.push(filterEnterpriseID.value)
+    }
+    if (filterFields.length > 1) {
+      filterBy = filterFields.join(',')
+      filterValue = filterValues.join(',')
+    } else if (filterFields.length === 1) {
+      filterBy = filterFields[0]
+      filterValue = filterValues[0]
+    }
+
     const ret = await deviceAPI.getDevices(
       getApiUserID(),
+      filterUser.value,
+      filterOnlineOnly.value,
       undefined /* device id */,
       undefined /* capability */,
-      undefined /* filter by */,
-      undefined /* filter value */,
+      filterBy,
+      filterValue,
       undefined /* contain */,
       options.page,
       options.itemsPerPage,
-      sortBy /* sortBy */,
-      options.sortBy[0]?.order /* sortDesc */
+      sortBy,
+      sortDesc
     )
     totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.devices ?? []
@@ -207,19 +238,77 @@ async function addDelDeviceVpnLabel(
   }
   loading.value = false
 }
+function applyFilters() {
+  loadItems(loadOptions.value)
+}
+function clearFilters() {
+  filterEnterpriseID.value = undefined
+  filterUser.value = undefined
+  filterOnlineOnly.value = undefined
+  loadItems(loadOptions.value)
+}
 </script>
 <template>
   <v-container>
     <Alert v-model="alert"></Alert>
     <v-chip size="large">Devices</v-chip>
+
+    <!-- Filter Row -->
+    <v-row class="mx-2 mt-4 mb-2" align="start" justify="space-between">
+      <v-col cols="12" md="3" v-if="isSysAdmin">
+        <v-text-field
+          v-model="filterEnterpriseID"
+          label="Filter by Enterprise ID"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="3">
+        <v-text-field
+          v-model="filterUser"
+          label="Filter by User"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-switch
+          v-model="filterOnlineOnly"
+          color="green"
+          label="Online Only"
+          density="compact"
+          @update:modelValue="loadItems(loadOptions)"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-btn
+          color="primary"
+          @click="applyFilters"
+        >
+          Filter
+        </v-btn>
+      </v-col>
+      <v-col cols="12" md="2" align="end">
+        <v-btn
+          variant="outlined"
+          @click="clearFilters"
+        >
+          Clear Filters
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- Action Row -->
     <v-row align="center" justify="end">
       <v-btn class="mx-1" @click="addButtonClicked">Add device</v-btn>
       <RefreshButton @refresh="loadItems(loadOptions)" />
     </v-row>
+
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
       :headers="isSysAdmin ? sysAdminViewHeaders : headers"
+      :hide-default-footer="totalItems <= itemsPerPage"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"

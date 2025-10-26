@@ -79,6 +79,8 @@ async function loadUsers(options: any) {
     // withDetails?: boolean | undefined,
     const ret = await userAPI.getUserList(
       [] /* id list */,
+      undefined,
+      false,
       "is_admin_user" /* filterBy */,
       "true" /* filterValue */,
       options.sortBy[0]?.key /* sortBy */,

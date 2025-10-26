@@ -165,6 +165,7 @@ function confirmDeleteText(item: FwInstance): string {
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
       :headers="headers"
+      :hide-default-footer="instances.length <= itemsPerPage"
       :items="instances"
       :items-length="instances.length"
       :loading="loading"

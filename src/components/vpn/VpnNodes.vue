@@ -14,6 +14,7 @@ import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
+import { hexToBase64 } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -37,23 +38,12 @@ function getMachineKeyBase64(machineKey: string): string {
   return hexToBase64(hexString)
 }
 
-function hexToBase64(hexString: string): string {
-  // Take first 8 characters (4 bytes) of hex
-  const first4BytesHex = hexString.substring(0, 8)
-  // Convert hex to binary
-  const bytes = new Uint8Array(4)
-  for (let i = 0; i < 8; i += 2) {
-    bytes[i / 2] = parseInt(first4BytesHex.substr(i, 2), 16)
-  }
-  // Convert to base64
-  return btoa(String.fromCharCode(...bytes))
-}
 const adminViewHeaders = ref([
   { title: 'ID', key: 'id' },
   { title: 'Enterprise ID', key: 'namespace' },
   { title: 'Network Domain', key: 'networkDomain' },
   { title: 'User', key: 'user', value: (item: any) => item.user.loginName },
-  { title: 'User ID', key: 'userID', value: (item: any) => item.user.name },
+  { title: 'User ID', key: 'userID' },
   {
     title: 'Machine key',
     key: 'machineKey',
@@ -200,6 +190,10 @@ const mdHeaders = ref([
 ] as const)
 
 const alert = ref<Alert>({ on: false })
+const filterEnterpriseID = ref()
+const filterUser = ref()
+const filterOnlineOnly = ref()
+
 const hideFooter = computed(() => {
   return totalItems.value <= itemsPerPage.value
 })
@@ -235,6 +229,11 @@ async function loadItems(options: any) {
     sortBy = decamelize(sortBy)
   }
 
+  var forNamespace = namespace.value
+  if (isSysAdmin.value) {
+    forNamespace = filterEnterpriseID.value
+  }
+
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListNodes(
       isAdmin.value
@@ -245,10 +244,11 @@ async function loadItems(options: any) {
           : uID
         : uID,
       [],
-      isSysAdmin.value ? undefined : namespace.value,
+      forNamespace,
       isAdmin.value ? undefined : network,
-      undefined,
-      undefined,
+      filterOnlineOnly.value,
+      filterUser.value ? "username" : undefined,
+      filterUser.value,
       sortBy,
       options.sortBy[0]?.order == 'desc' ? true : false,
       options.page,
@@ -279,9 +279,19 @@ const headers = computed(() => {
     return xsHeaders.value
   }
 })
+
+function applyFilters() {
+  loadItems(loadOptions.value)
+}
+function clearFilters() {
+  filterEnterpriseID.value = undefined
+  filterUser.value = undefined
+  filterOnlineOnly.value = undefined
+  loadItems(loadOptions.value)
+}
 </script>
 <template>
-  <v-container>
+  <v-container class="ma-6" fluid>
     <Alert v-model="alert"></Alert>
     <v-row class="mx-2 my-1" align="center" justify="space-between">
       <v-col>
@@ -295,6 +305,52 @@ const headers = computed(() => {
         ><RefreshButton @refresh="loadItems(loadOptions)"
       /></v-col>
     </v-row>
+
+    <!-- Filter Row -->
+    <v-row class="mx-2 mt-4 mb-2" align="start" justify="space-between">
+      <v-col cols="12" md="3" v-if="isSysAdmin">
+        <v-text-field
+          v-model="filterEnterpriseID"
+          label="Filter by Enterprise ID"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="3" v-if="isAdmin || isNetworkAdmin">
+        <v-text-field
+          v-model="filterUser"
+          label="Filter by User"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-switch
+          v-model="filterOnlineOnly"
+          color="green"
+          label="Online Only"
+          density="compact"
+          @update:modelValue="loadItems(loadOptions)"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-btn
+          color="primary"
+          @click="applyFilters"
+        >
+          Filter
+        </v-btn>
+      </v-col>
+      <v-col cols="12" md="2" align="end">
+        <v-btn
+          variant="outlined"
+          @click="clearFilters"
+        >
+          Clear Filters
+        </v-btn>
+      </v-col>
+    </v-row>
+
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
@@ -306,6 +362,14 @@ const headers = computed(() => {
       :search="search"
       @update:options="loadItems"
     >
+      <template v-slot:item.userID="{ item }">
+        <ShortenTextChip
+          :shown="23"
+          :text="item.user?.name"
+          withSuffix
+        ></ShortenTextChip>
+      </template>
+
       <template v-slot:item.givenName="{ item }">
         <span
           class="font-weight-bold text-primary cursor-pointer"

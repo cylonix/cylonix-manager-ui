@@ -262,7 +262,7 @@ onMounted(() => {
       :border="0"
       maxWidth="600"
     >
-      <Alert v-model="alert"></Alert>
+      <Alert class="mb-4" v-model="alert"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="on">
         <v-row v-if="!canLogin" justify="center">
           <v-col cols="12">

@@ -104,3 +104,22 @@ export function parseKVorJSON(s?: string) {
     }
   }
 }
+
+export function hexToBase64(hexString: string, fullString = false): string {
+  // Take first 8 characters (4 bytes) of hex if not for full string
+  if (!fullString) {
+    hexString = hexString.substring(0, 8)
+  }
+
+  // Remove any non-hex characters
+  const cleanHex = hexString.replace(/[^0-9A-Fa-f]/g, '')
+
+  // Convert hex to binary
+  const bytes = new Uint8Array(cleanHex.length / 2)
+  for (let i = 0; i < cleanHex.length; i += 2) {
+    bytes[i / 2] = parseInt(cleanHex.substring(i, i + 2), 16)
+  }
+
+  // Convert to base64
+  return btoa(String.fromCharCode(...bytes))
+}

@@ -9,39 +9,33 @@ import { storeToRefs } from 'pinia'
 import { PopConfigOutput as PopConfig } from '@/clients/supervisor/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, supPopAPI } from '@/plugins/api'
-//import { shortTs } from '@/plugins/date'
+import { shortTs } from '@/plugins/date'
 //import { newToast } from '@/plugins/toast'
-//import { compactList } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 
-/*const headers = ref([
-    { title: 'ID', key: 'id', align: 'center' },
-    { title: 'Enterprise ID', key: 'namespace' },
-    { title: 'Name', key: 'name' },
-    { title: 'Public key', key: 'publicKey', align: 'center' },
-    {
-        title: 'Addresses',
-        key: 'addresses',
-        value: (item: any) => compactList(item.addresses)
-    },
-    {
-        title: 'Allowed IPs',
-        key: 'allowedIps',
-        value: (item: any) => compactList(item.allowedIps)
-    },
-    {
-        title: 'Endpoints',
-        key: 'endpoints',
-        value: (item: any) => compactList(item.endpoints)
-    },
-    { title: 'Online', key: 'online', align: 'center' },
-    {
-        title: 'Last seen',
-        Key: 'lastSeen',
-        value: (item: any) => shortTs(item.lastSeen)
-    },
-    { title: 'Actions', key: 'actions', sortable: false }
-] as const)*/
+const headers = ref([
+  { title: 'ID', key: 'id', align: 'center' },
+  { title: 'Name', key: 'name' },
+  { title: 'City', key: 'city' },
+  {
+    title: 'Endpoint',
+    key: 'grpcEndpoint',
+  },
+  {
+    title: 'Default gateway',
+    key: 'defaultGw',
+  },
+  {
+    title: 'Underlay',
+    key: 'underlayAddr',
+  },
+  {
+    title: 'Updated at',
+    key: 'updateTime',
+    value: (item: any) => shortTs(item.updateTime),
+  },
+  { title: 'Actions', key: 'actions', sortable: false },
+] as const)
 
 const addPopDialog = ref(false)
 const alert = ref<Alert>({ on: false })
@@ -50,7 +44,7 @@ const loading = ref(false)
 const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<PopConfig[]>()
+const serverItems = ref<PopConfig[]>([])
 const totalItems = ref(0)
 
 const store = useUserStore()
@@ -114,9 +108,9 @@ function confirmDeleteText(item: PopConfig): string {
 }
 </script>
 <template>
-  <v-container>
+  <v-container class="mt-2">
     <Alert v-model="alert"></Alert>
-    <v-row align="center" fluid>
+    <v-row align="center" class="mx-2" fluid>
       <v-chip size="large">Pops</v-chip>
       <v-spacer></v-spacer>
       <AddButton label="Add Pop" @click="addPopDialog = true"></AddButton>
@@ -125,6 +119,8 @@ function confirmDeleteText(item: PopConfig): string {
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
+      :headers="headers"
+      :hide-default-footer="totalItems <= itemsPerPage"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"

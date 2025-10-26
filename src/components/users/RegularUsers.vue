@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
+import { decamelize } from '@cylonix/humps'
 import { PredefinedRoles, User } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
@@ -24,7 +25,7 @@ const headers = ref([
   { title: 'Phone', key: 'phone' },
   { title: 'Login', key: 'login' },
   { title: 'Network Domain', key: 'networkDomain' },
-  { title: 'Roles', key: 'roles' },
+  { title: 'Roles', key: 'roles', align: 'center' },
   { title: 'Mesh VPN mode', key: 'networkSetting.meshVpnMode' },
   { title: 'Auto approve device', key: 'auto-approve-device', align: 'center' },
   { title: 'Auto accept routes', key: 'auto-accept-routes', align: 'center' },
@@ -34,9 +35,12 @@ const headers = ref([
 const addUserDialog = ref(false)
 const alert = ref<Alert>({ on: false })
 const current = ref<User>()
+const filterEnterpriseID = ref()
+const filterUser = ref()
+const filterOnlineOnly = ref()
 const itemsPerPage = ref(10)
 const loading = ref(false)
-const loadUserOptions = ref()
+const loadOptions = ref()
 const note = ref('')
 const resetPasswordDialog = ref(false)
 const search = ref('')
@@ -63,7 +67,7 @@ async function deleteUser(item: User) {
       color: 'green',
       text: `User ${item.displayName}(${shortUserID(item.userID)}) deleted`,
     })
-    await loadUsers(loadUserOptions.value)
+    await loadItems(loadOptions.value)
   })
   if (ret) {
     alert.value = ret
@@ -72,10 +76,40 @@ async function deleteUser(item: User) {
   loading.value = false
 }
 
-async function loadUsers(options: any) {
-  loadUserOptions.value = options
+async function loadItems(options: any) {
+  loadOptions.value = options
   loading.value = true
   const ret = await tryRequest(async () => {
+    let sortBy: string | undefined
+    let sortDesc: string | undefined
+    for (const [i, sort] of options.sortBy.entries()) {
+      if (i === 0) {
+        sortBy = decamelize(sort.key)
+        sortDesc = sort.order ?? ''
+      } else {
+        sortBy = sortBy + ',' + decamelize(sort.key)
+        sortDesc = sortDesc + ',' + (sort.order ?? '')
+      }
+    }
+
+    let filterBy: string | undefined
+    let filterValue: string | undefined
+
+    const filterFields: string[] = []
+    const filterValues: string[] = []
+
+    if (filterEnterpriseID.value) {
+      filterFields.push('namespace')
+      filterValues.push(filterEnterpriseID.value)
+    }
+    if (filterFields.length > 1) {
+      filterBy = filterFields.join(',')
+      filterValue = filterValues.join(',')
+    } else if (filterFields.length === 1) {
+      filterBy = filterFields[0]
+      filterValue = filterValues[0]
+    }
+
     // Parameters:
     // requestBody: string[],
     // filterBy?: string | undefined, filterValue?: string | undefined,
@@ -84,10 +118,12 @@ async function loadUsers(options: any) {
     // withDetails?: boolean | undefined,
     const ret = await userAPI.getUserList(
       [] /* id list */,
-      undefined /* filterBy */,
-      undefined /* filterValue */,
-      options.sortBy[0]?.key /* sortBy */,
-      options.sortBy[0]?.order /* sortDesc */,
+      filterUser.value,
+      filterOnlineOnly.value,
+      filterBy,
+      filterValue,
+      sortBy,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )
@@ -137,13 +173,22 @@ async function addDelRole(item: User, deleteRole: boolean, role: string) {
         deleteRole ? 'deleted' : 'added'
       } role ${role}`,
     })
-    await loadUsers(loadUserOptions.value)
+    await loadItems(loadOptions.value)
   })
   if (ret) {
     alert.value = ret
   }
   console.log('Done adding/deleting user role.')
   loading.value = false
+}
+function applyFilters() {
+  loadItems(loadOptions.value)
+}
+function clearFilters() {
+  filterEnterpriseID.value = undefined
+  filterUser.value = undefined
+  filterOnlineOnly.value = undefined
+  loadItems(loadOptions.value)
 }
 </script>
 <template>
@@ -152,9 +197,48 @@ async function addDelRole(item: User, deleteRole: boolean, role: string) {
     <v-row class="mx-1 my-2" align="center" justify="space-between">
       <v-chip size="large">Users</v-chip>
       <v-spacer></v-spacer>
-      <v-btn class="mx-2" @click="addUserButtonClicked">Add user</v-btn>
-      <RefreshButton @refresh="loadUsers(loadUserOptions)" />
+      <AddButton
+        label="Add User"
+        @click="addUserButtonClicked"
+      ></AddButton>
+      <RefreshButton @refresh="loadItems(loadOptions)" />
     </v-row>
+
+    <!-- Filter Row -->
+    <v-row class="mx-1 mt-4 mb-2" align="start" justify="space-between">
+      <v-col cols="12" md="3" v-if="isSysAdmin">
+        <v-text-field
+          v-model="filterEnterpriseID"
+          label="Filter by Enterprise ID"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="3">
+        <v-text-field
+          v-model="filterUser"
+          label="Filter by User"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-switch
+          v-model="filterOnlineOnly"
+          color="green"
+          label="Online Only"
+          density="compact"
+          @update:modelValue="loadItems(loadOptions)"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-btn color="primary" @click="applyFilters"> Filter </v-btn>
+      </v-col>
+      <v-col cols="12" md="2" align="end">
+        <v-btn variant="outlined" @click="clearFilters"> Clear Filters </v-btn>
+      </v-col>
+    </v-row>
+
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
@@ -163,7 +247,7 @@ async function addDelRole(item: User, deleteRole: boolean, role: string) {
       :items-length="totalItems"
       :loading="loading"
       :search="search"
-      @update:options="loadUsers"
+      @update:options="loadItems"
     >
       <template v-slot:item.id="{ item }">
         <ShortenTextChip :text="item.userID" />
@@ -209,17 +293,17 @@ async function addDelRole(item: User, deleteRole: boolean, role: string) {
       v-model="addUserDialog"
       withUsername
       :withNamespace="isSysAdmin"
-      @added="loadUsers(loadUserOptions)"
+      @added="loadItems(loadOptions)"
     ></AddUserDialog>
     <UpdateUserDialog
       v-model="updateUserDialog"
       :user="current"
-      @updated="loadUsers(loadUserOptions)"
+      @updated="loadItems(loadOptions)"
     ></UpdateUserDialog>
     <UpdateUserNetworkDomainDialog
       v-model="updateUserNetworkDomainDialog"
       :user="current"
-      @updated="loadUsers(loadUserOptions)"
+      @updated="loadItems(loadOptions)"
     ></UpdateUserNetworkDomainDialog>
     <ResetPasswordDialog v-model="resetPasswordDialog" :user="user">
     </ResetPasswordDialog>

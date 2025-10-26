@@ -11,7 +11,7 @@ import type { Alert } from '@/plugins/alert'
 import { tryRequest, wgAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
-import { compactList } from '@/plugins/utils'
+import { compactList, hexToBase64 } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -37,8 +37,8 @@ const headers = ref([
   { title: 'Online', key: 'online', align: 'center' },
   {
     title: 'Last seen',
-    Key: 'lastSeen',
-    value: (item: any) => shortTs(item.lastSeen),
+    key: 'lastSeen',
+    value: (item: any) => shortTs(item.lastSeen * 1000),
   },
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
@@ -113,7 +113,7 @@ function confirmDeleteText(item: WgNode): string {
 }
 </script>
 <template>
-  <v-container>
+  <v-container class="ma-6" fluid>
     <Alert v-model="alert"></Alert>
     <v-chip size="large">WireGuard gateways</v-chip>
     <v-row align="center" justify="end">
@@ -133,7 +133,9 @@ function confirmDeleteText(item: WgNode): string {
         <ShortenTextChip :text="item.id"></ShortenTextChip>
       </template>
       <template v-slot:item.publicKey="{ item }">
-        <ShortenTextChip :text="item.publicKey"></ShortenTextChip>
+        <ShortenTextChip
+          :text="hexToBase64(item.publicKey, true)"
+        ></ShortenTextChip>
       </template>
 
       <template v-slot:item.online="{ item }">

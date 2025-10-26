@@ -4,12 +4,12 @@
 const shortFmt = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'short',
   timeStyle: 'short',
-  hourCycle: "h24",
+  hourCycle: "h23",
 })
 
 const shortTimeFmt = new Intl.DateTimeFormat(undefined, {
   timeStyle: 'short',
-  hourCycle: "h24",
+  hourCycle: "h23",
 })
 
 export function toShortFmt(d: Date): string {

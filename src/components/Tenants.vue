@@ -121,6 +121,7 @@ async function deleteTenant(item: TenantConfig) {
       v-model:items-per-page="itemsPerPage"
       show-expand
       :headers="headers"
+      :hide-default-footer="totalItems <= itemsPerPage"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"
@@ -139,7 +140,7 @@ async function deleteTenant(item: TenantConfig) {
       <template v-slot:item.auto-accept-routes="{ item }">
         <v-icon v-if="item.autoAcceptRoutes" color="red">mdi-check</v-icon>
       </template>
-      <template v-slot:item.actions="{ item }">
+      <template v-if="isSysAdmin" v-slot:item.actions="{ item }">
         <DeleteButton
           v-model:note="note"
           :confirmDeleteText="confirmDeleteText(item)"

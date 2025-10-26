@@ -56,6 +56,7 @@ watchEffect(() => {
 
 function change() {
   changed.value = true
+  form.value?.validate()
 }
 
 async function update() {
@@ -103,10 +104,14 @@ async function update() {
     title="Update"
     @ok="update"
   >
-    <template v-slot:item>
+    <template class="mt-2" v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
-        <NameInput v-model="displayName" label="Display name"></NameInput>
+      <v-form ref="form" class="mt-2" v-model="isFormValid" auto-complete="on">
+        <NameInput
+          v-model="displayName"
+          label="Display name"
+          @change="change"
+        ></NameInput>
         <EmailInput v-model="email" @change="change"></EmailInput>
         <PhoneInput v-model="phone" @change="change"></PhoneInput>
         <v-chip

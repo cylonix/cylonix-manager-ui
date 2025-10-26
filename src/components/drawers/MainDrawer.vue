@@ -120,7 +120,7 @@ function updateRail() {
         to="/ui/vpn-nodes"
       ></v-list-item>
       <v-list-item
-        v-if="loggedIn"
+        v-if="loggedIn && !isAdmin"
         title="Auth Keys"
         prepend-icon="mdi-key-chain"
         to="/ui/vpn-user-keys"
@@ -143,7 +143,7 @@ function updateRail() {
         title="Access Controls"
         to="/policies"
       ></v-list-item>
-      <v-list-group v-if="isSysAdmin">
+      <v-list-group v-if="isAdmin">
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
@@ -171,12 +171,6 @@ function updateRail() {
       </v-list-group>
       <v-list-item
         v-if="isAdmin"
-        prepend-icon="mdi-security"
-        title="Firewall"
-        to="/fw"
-      ></v-list-item>
-      <v-list-item
-        v-if="isAdmin"
         prepend-icon="mdi-label-multiple-outline"
         title="Labels"
         to="/labels"
@@ -187,13 +181,7 @@ function updateRail() {
         title="Policies"
         to="/policies"
       ></v-list-item>
-      <v-list-item
-        v-if="isAdmin"
-        prepend-icon="mdi-application-outline"
-        title="Applications"
-        to="/apps"
-      ></v-list-item>
-      <v-list-group v-if="loggedIn">
+      <v-list-group v-if="loggedIn && !isAdmin">
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"

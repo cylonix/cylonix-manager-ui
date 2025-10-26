@@ -9,39 +9,30 @@ import { storeToRefs } from 'pinia'
 import { WgInstance } from '@/clients/supervisor/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, supWgAPI } from '@/plugins/api'
-//import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
-//import { compactList } from '@/plugins/utils'
+import { compactList } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 
-/*const headers = ref([
-    { title: 'ID', key: 'id', align: 'center' },
-    { title: 'Enterprise ID', key: 'namespace' },
+const headers = ref([
+    { title: 'ID', key: 'id' },
     { title: 'Name', key: 'name' },
-    { title: 'Public key', key: 'publicKey', align: 'center' },
+    { title: 'Endpoint', key: 'conn' },
     {
-        title: 'Addresses',
-        key: 'addresses',
-        value: (item: any) => compactList(item.addresses)
+        title: 'Access Points',
+        key: 'accessPoints',
+        value: (item: any) => compactList(item.accessPoints)
     },
     {
-        title: 'Allowed IPs',
-        key: 'allowedIps',
-        value: (item: any) => compactList(item.allowedIps)
+        title: 'Default Gateway',
+        key: 'defaultGw',
     },
     {
-        title: 'Endpoints',
-        key: 'endpoints',
-        value: (item: any) => compactList(item.endpoints)
+        title: 'Default Interface',
+        key: 'defaultInterface',
     },
-    { title: 'Online', key: 'online', align: 'center' },
-    {
-        title: 'Last seen',
-        Key: 'lastSeen',
-        value: (item: any) => shortTs(item.lastSeen)
-    },
+    { title: 'Pop', key: 'pop' },
     { title: 'Actions', key: 'actions', sortable: false }
-] as const)*/
+] as const)
 
 const addWgDialog = ref(false)
 const alert = ref<Alert>({ on: false })
@@ -50,7 +41,7 @@ const loading = ref(false)
 const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<WgInstance[]>()
+const serverItems = ref<WgInstance[]>([])
 const totalItems = ref(0)
 
 const store = useUserStore()
@@ -125,6 +116,8 @@ function confirmDeleteText(item: WgInstance): string {
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
+      :headers="headers"
+      :hide-default-footer="totalItems <= itemsPerPage"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"

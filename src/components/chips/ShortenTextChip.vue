@@ -11,6 +11,7 @@ const props = defineProps<{
   size?: string
   start?: number
   shown?: number
+  withSuffix?: boolean
 }>()
 const menu = ref(false)
 const label = computed(() => {
@@ -19,7 +20,11 @@ const label = computed(() => {
   }
   const start = props.start ?? 0
   const end = start + (props.shown ?? 13)
-  return props.text.substring(start, end)
+  var label = props.text.substring(start, end)
+  if (props.withSuffix && end < props.text.length) {
+    label += '...'
+  }
+  return label
 })
 function copyText() {
   navigator.clipboard.writeText(props.text)
@@ -33,7 +38,7 @@ function copyText() {
     transition="scale-transition"
   >
     <template v-slot:activator="{ props }">
-      <v-chip v-bind="props" :size="size" variant="text">
+      <v-chip class="px-0" v-bind="props" :size="size" variant="text">
         {{ label }}
       </v-chip>
     </template>

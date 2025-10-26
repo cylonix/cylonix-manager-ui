@@ -38,17 +38,20 @@ async function loadItems(options: any) {
     const ret = await supInstanceAPI().getInstances()
     const data = ret?.data
     if (data && typeof data === 'string') {
-      const v = data as string;
-      const preview = v.substring(0, 80) + (v.length > 80 ? '...' : '');
-      throw new Error(`Server returned invalid format - expected JSON. Got: ${preview}`);
+      const v = data as string
+      const preview = v.substring(0, 80) + (v.length > 80 ? '...' : '')
+      throw new Error(
+        `Server returned invalid format - expected JSON. Got: ${preview}`
+      )
     }
-    instances.value = ret?.data?.filter(item => {
-      // Filter out undefined namespaces and those with invalid format
-      if (!item?.namespace) return false
-      if (item.namespace.length > 80) return false
-      if (item.namespace.includes(' ')) return false
-      return true
-    }) ?? []
+    instances.value =
+      ret?.data?.filter((item) => {
+        // Filter out undefined namespaces and those with invalid format
+        if (!item?.namespace) return false
+        if (item.namespace.length > 80) return false
+        if (item.namespace.includes(' ')) return false
+        return true
+      }) ?? []
     console.log('instances:', ret?.data)
   })
   if (ret) {
@@ -67,32 +70,24 @@ function refresh() {
     <v-row
       ><v-col col="12"> <Alert v-model="alert" fluid></Alert> </v-col
     ></v-row>
-    <v-row v-for="i in instances" fluid class="fill-height">
+    <v-row v-for="i in instances" fluid>
       <v-col :col="12">
         <SupervisorPopInstances
-          v-if="i.namespace"
+          v-if="i.namespace && i.instances?.popInstance"
           :namespace="i.namespace"
           :instances="i.instances?.popInstance ?? []"
           v-model:alert="alert"
           @refresh="refresh"
         ></SupervisorPopInstances>
-      </v-col>
-    </v-row>
-    <v-row v-for="i in instances" fluid>
-      <v-col :col="12">
         <SupervisorWgInstances
-          v-if="i.namespace"
+          v-if="i.namespace && i.instances?.wgInstance"
           :namespace="i.namespace"
           :instances="i.instances?.wgInstance ?? []"
           v-model:alert="alert"
           @refresh="refresh"
         ></SupervisorWgInstances>
-      </v-col>
-    </v-row>
-    <v-row v-for="i in instances" fluid>
-      <v-col :col="12">
         <SupervisorFwInstances
-          v-if="i.namespace"
+          v-if="i.namespace && i.instances?.fwInstance"
           :namespace="i.namespace"
           :instances="i.instances?.fwInstance ?? []"
           :pops="i.instances?.popInstance ?? []"
