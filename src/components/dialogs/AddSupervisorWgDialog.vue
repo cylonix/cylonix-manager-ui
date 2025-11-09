@@ -83,7 +83,7 @@ async function add() {
     title="Add WireGuard Gateway"
     @ok="add"
     ><template v-slot:item>
-      <Alert v-if="alert.on" :alert="alert"></Alert>
+      <Alert v-model="alert"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="on">
         <v-row>
           <v-col sm="12" lg="6">

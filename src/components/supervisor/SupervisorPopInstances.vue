@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
   IPRoute,
@@ -18,10 +18,20 @@ import { supPopAPI, supRouteAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
-const props = defineProps<{
-  namespace: string
-  instances: Array<PopInstance>
-}>()
+const props = defineProps({
+  namespace: {
+    type: String,
+    required: true,
+  },
+  instances: {
+    type: Array<PopInstance>,
+    default: []
+  },
+  allPops: {
+    type: Array<string>,
+    default: []
+  }
+})
 const emit = defineEmits(['refresh'])
 const alert = defineModel<Alert>('alert')
 
@@ -36,19 +46,15 @@ const headers = ref([
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
-onMounted(() => {
-  loadSystemPops()
-})
-
 const addPopDialog = ref(false)
 const addPops = ref<Array<string>>([])
 const addRouteDialog = ref(false)
 const addRoutePop = ref<PopInstance>()
-const allPops = ref<Array<string>>([])
 const itemsPerPage = ref(10)
 const loading = ref(false)
 const note = ref('')
 const search = ref('')
+const showDeviceHostRoutes = ref<Record<string, boolean>>({})
 
 const store = useUserStore()
 const { isSysAdmin } = storeToRefs(store)
@@ -87,43 +93,20 @@ function confirmDeleteText(item: PopInstance): string {
   return `Delete pop "${item.name}" with ID "${item.id}" in ${namespace}?`
 }
 
-async function loadSystemPops() {
-  if (!isSysAdmin.value) {
-    alert.value = {
-      on: true,
-      text: 'Operation is only allowed for system administrators.',
-    }
-    return
-  }
-
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    const ret = await supPopAPI().getPopList()
-    allPops.value = ret?.data.popList?.map((p) => p.name) ?? []
-    console.log('instances:', ret?.data)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading pop instances.')
-  loading.value = false
-}
-
 function refresh() {
-  loadSystemPops()
   emit('refresh')
 }
 
 function canAddPop(current: Array<PopInstance>): boolean {
   const existing = current.map((p) => p.name)
-  const toAdd = allPops.value.filter((p) => !existing.some((e) => e == p))
+  const toAdd = props.allPops.filter((p) => !existing.some((e) => e == p))
   return toAdd.length > 0
 }
 
 function addPop() {
   addPopDialog.value = true
   const existing = props.instances.map((p) => p.name)
-  addPops.value = allPops.value.filter((p) => !existing.some((e) => e == p))
+  addPops.value = props.allPops.filter((p) => !existing.some((e) => e == p))
 }
 
 function addRoute(item: PopInstance) {
@@ -151,6 +134,7 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
       color: 'green',
       text: `Deleted route ${item.dest} -> ${item.via} successfully.`,
     })
+    refresh()
   })
   if (ret) {
     console.log('ret=', ret)
@@ -158,16 +142,38 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
   }
   loading.value = false
 }
+
+function nonDeviceHostRoutes(pop: PopInstance): Array<IPRoute> {
+  return (pop.routes ?? []).filter((r) => {
+    return !r.dest?.startsWith("100") || !r.dest?.endsWith("/32")
+  })
+}
+
+function deviceHostRoutes(pop: PopInstance): Array<IPRoute> {
+  return (pop.routes ?? []).filter((r) => {
+    return r.dest?.startsWith("100") && r.dest?.endsWith("/32")
+  })
+}
+
+function toggleDeviceHostRoutes(item: PopInstance) {
+  const itemId = item.id ?? item.name
+  showDeviceHostRoutes.value[itemId] = !showDeviceHostRoutes.value[itemId]
+}
+
+function isDeviceHostRoutesVisible(item: PopInstance): boolean {
+  const itemId = item.id ?? item.name
+  return showDeviceHostRoutes.value[itemId] ?? false
+}
 </script>
 <template>
   <v-container fluid>
-    <v-row class="ma-2">
+    <v-row class="ma-2" fluid>
       <v-chip size="large">Pop Instances of {{ namespace }}</v-chip>
       <v-spacer></v-spacer>
       <AddButton v-if="canAddPop(instances)" @click="addPop"></AddButton>
       <RefreshButton @refresh="refresh" />
     </v-row>
-    <v-row>
+    <v-row fluid>
       <v-col col="12">
         <v-data-table
           v-model:items-per-page="itemsPerPage"
@@ -197,22 +203,38 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
           </template>
 
           <template v-slot:item.routes="{ item }">
-            <v-row align="center">
-              <v-col col="9">
-                <PopRouteChip
-                  v-for="n in item.routes"
-                  :route="n"
-                  @delete="deleteRoute(item, n)"
-                >
-                </PopRouteChip>
-              </v-col>
-              <v-col col="3">
-                <AddButton
-                  label="Add a route to this pop"
-                  @click="addRoute(item)"
-                ></AddButton>
-              </v-col>
-            </v-row>
+            <!-- Non-device host routes -->
+            <PopRouteChip
+              v-for="n in nonDeviceHostRoutes(item)"
+              :route="n"
+              @delete="deleteRoute(item, n)"
+            >
+            </PopRouteChip>
+
+            <!-- Toggle button for device host routes -->
+            <v-btn
+              v-if="deviceHostRoutes(item).length > 0"
+              class="mx-2"
+              size="small"
+              variant="outlined"
+              @click="toggleDeviceHostRoutes(item)"
+            >
+              {{ isDeviceHostRoutesVisible(item) ? 'Hide' : '' }} Device Routes
+              ({{ deviceHostRoutes(item).length }})
+            </v-btn>
+
+            <!-- Device host routes (shown when toggled) -->
+            <PopRouteChip
+              v-if="isDeviceHostRoutesVisible(item)"
+              v-for="n in deviceHostRoutes(item)"
+              :route="n"
+              @delete="deleteRoute(item, n)"
+            >
+            </PopRouteChip>
+            <AddButton
+              label="Add a route to this pop"
+              @click="addRoute(item)"
+            ></AddButton>
           </template>
 
           <template v-slot:item.tunnels="{ item }">
@@ -233,15 +255,17 @@ async function deleteRoute(pop: PopInstance, item: IPRoute) {
     </v-row>
     <AddSupervisorPopToNamespaceDialog
       v-model="addPopDialog"
-      :namespace="namespace"
+      :for-namespace="namespace"
       :add-pops="addPops"
+      @added="refresh"
     >
     </AddSupervisorPopToNamespaceDialog>
     <AddPopRouteDialog
       v-model="addRouteDialog"
       :namespace="namespace"
       :pop="addRoutePop"
-      :all-pops="allPops"
+      :all-pops="instances"
+      @added="refresh"
     >
     </AddPopRouteDialog>
   </v-container>

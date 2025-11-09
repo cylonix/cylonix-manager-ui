@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { decamelize } from '@cylonix/humps'
 import { PredefinedRoles, User } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
@@ -13,13 +13,9 @@ import { tryRequest, userAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
-const headers = ref([
+const sysAdminHeaders = ref([
   { title: 'Enterprise ID', key: 'namespace' },
-  {
-    title: 'User ID',
-    key: 'id',
-    align: 'center',
-  },
+  { title: 'User ID', key: 'id', align: 'center' },
   { title: 'Name', key: 'displayName' },
   { title: 'Email', key: 'email' },
   { title: 'Phone', key: 'phone' },
@@ -27,6 +23,24 @@ const headers = ref([
   { title: 'Network Domain', key: 'networkDomain' },
   { title: 'Roles', key: 'roles', align: 'center' },
   { title: 'Mesh VPN mode', key: 'networkSetting.meshVpnMode' },
+  { title: 'Mesh VPN Enabled', key: 'wgEnabled', align: 'center' },
+  { title: 'Gateway Enabled', key: 'gatewayEnabled', align: 'center' },
+  { title: 'Auto approve device', key: 'auto-approve-device', align: 'center' },
+  { title: 'Auto accept routes', key: 'auto-accept-routes', align: 'center' },
+  { title: 'Actions', key: 'actions', align: 'center', sortable: false },
+] as const)
+
+const adminHeaders = ref([
+  { title: 'User ID', key: 'id', align: 'center' },
+  { title: 'Name', key: 'displayName' },
+  { title: 'Email', key: 'email' },
+  { title: 'Phone', key: 'phone' },
+  { title: 'Login', key: 'login' },
+  { title: 'Network Domain', key: 'networkDomain' },
+  { title: 'Roles', key: 'roles', align: 'center' },
+  { title: 'Mesh VPN mode', key: 'networkSetting.meshVpnMode' },
+  { title: 'Mesh VPN Enabled', key: 'wgEnabled', align: 'center' },
+  { title: 'Gateway Enabled', key: 'gatewayEnabled', align: 'center' },
   { title: 'Auto approve device', key: 'auto-approve-device', align: 'center' },
   { title: 'Auto accept routes', key: 'auto-accept-routes', align: 'center' },
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
@@ -57,6 +71,14 @@ const { isAdmin, isSysAdmin } = storeToRefs(store)
 function shortUserID(id: string | undefined): string | undefined {
   return `${id?.substring(0, 13)}...`
 }
+
+const headers = computed(() => {
+  if (isSysAdmin.value) {
+    return sysAdminHeaders.value
+  } else {
+    return adminHeaders.value
+  }
+})
 
 async function deleteUser(item: User) {
   const ret = await tryRequest(async () => {
@@ -192,15 +214,12 @@ function clearFilters() {
 }
 </script>
 <template>
-  <v-container v-if="isAdmin" fluid>
+  <v-container class="ma-4" v-if="isAdmin" fluid>
     <Alert v-model="alert"></Alert>
     <v-row class="mx-1 my-2" align="center" justify="space-between">
       <v-chip size="large">Users</v-chip>
       <v-spacer></v-spacer>
-      <AddButton
-        label="Add User"
-        @click="addUserButtonClicked"
-      ></AddButton>
+      <AddButton label="Add User" @click="addUserButtonClicked"></AddButton>
       <RefreshButton @refresh="loadItems(loadOptions)" />
     </v-row>
 
@@ -241,8 +260,9 @@ function clearFilters() {
 
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
-      class="mt-2"
+      class="ma-2"
       :headers="headers"
+      :hide-default-footer="totalItems <= itemsPerPage"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"
@@ -270,6 +290,16 @@ function clearFilters() {
           @delete="addDelRole(item, true, role)"
         />
       </template>
+      <template v-slot:item.wgEnabled="{ item }">
+        <v-icon v-if="item.networkSetting?.wgEnabled" color="purple"
+          >mdi-check</v-icon
+        >
+      </template>
+      <template v-slot:item.gatewayEnabled="{ item }">
+        <v-icon v-if="item.networkSetting?.gatewayEnabled" color="purple"
+          >mdi-check</v-icon
+        >
+      </template>
       <template v-slot:item.auto-approve-device="{ item }">
         <v-icon v-if="item.autoApproveDevice" color="purple">mdi-check</v-icon>
       </template>
@@ -277,16 +307,18 @@ function clearFilters() {
         <v-icon v-if="item.autoAcceptRoutes" color="red">mdi-check</v-icon>
       </template>
       <template v-slot:item.actions="{ item }">
-        <DeleteButton
-          v-model:note="note"
-          :confirmDeleteText="confirmDeleteText(item)"
-          @delete="deleteUser(item)"
-        >
-        </DeleteButton>
-        <ResetPasswordButton
-          @click="resetUserPassword(item)"
-        ></ResetPasswordButton>
-        <EditButton @click="edit(item)"></EditButton>
+        <div class="d-flex align-center">
+          <DeleteButton
+            v-model:note="note"
+            :confirmDeleteText="confirmDeleteText(item)"
+            @delete="deleteUser(item)"
+          >
+          </DeleteButton>
+          <ResetPasswordButton
+            @click="resetUserPassword(item)"
+          ></ResetPasswordButton>
+          <EditButton @click="edit(item)"></EditButton>
+        </div>
       </template>
     </v-data-table-server>
     <AddUserDialog

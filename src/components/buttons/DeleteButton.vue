@@ -22,7 +22,6 @@ function okDelete() {
   <v-tooltip location="top">
     <template v-slot:activator="{ props }">
       <v-btn
-        class="mx-1"
         v-bind="props"
         icon=" mdi-delete-outline"
         color="red"

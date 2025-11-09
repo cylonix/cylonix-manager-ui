@@ -9,13 +9,14 @@ import { useTheme } from 'vuetify'
 import { parse as parseJsonc } from 'jsonc-parser'
 import { storeToRefs } from 'pinia'
 import * as monaco from 'monaco-editor'
+import { V1Node } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { usePolicyStore } from '@/stores/policy'
 import { useUserStore } from '@/stores/user'
 
-// Donot use ref for this. It will cause the editor to freeze.
+// Do not use ref for this. It will cause the editor to freeze.
 // https://github.com/microsoft/monaco-editor/issues/3154
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 
@@ -27,7 +28,49 @@ const isDarkTheme = ref(theme.global.current.value.dark)
 const isPolicyDifferentThanSaved = ref(false)
 const savedPolicy = ref('')
 const { policy } = storeToRefs(usePolicyStore())
-const { namespace, user } = storeToRefs(useUserStore())
+const { isNetworkAdmin, namespace, user } = storeToRefs(useUserStore())
+const nodes = ref<V1Node[]>()
+const showConnectivity = ref(false)
+
+async function loadNodes() {
+  loading.value = true
+  const uID = user.value?.userID
+  if (!uID) {
+    alert.value = {
+      on: true,
+      text: 'Missing user ID.',
+    }
+    return
+  }
+  const network = user.value?.networkDomain
+  console.log('uid=', uID, 'network=', network)
+  var forNamespace = namespace.value
+
+  const ret = await tryRequest(async () => {
+    const ret = await vpnAPI.headscaleServiceListNodes(
+      isNetworkAdmin.value
+        ? network
+          ? undefined
+          : uID
+        : uID,
+      [],
+      forNamespace,
+      network
+    );
+    nodes.value = ret?.data.nodes ?? []
+    console.log('nodes:', ret?.data)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  console.log('Done loading items.')
+  loading.value = false
+}
+
+onMounted(() => {
+  console.log('Mounted Policies.vue')
+  loadNodes()
+})
 
 // Default policy template with comments
 const defaultPolicy = `// Example/default ACLs for unrestricted connections.
@@ -295,9 +338,9 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container fluid>
-    <v-sheet class="mx-auto" border="0" elevation="0" maxWidth="1200">
+    <v-sheet class="mx-auto" border="0" elevation="0">
       <v-row>
-        <v-col cols="12">
+        <v-col cols="12" xl="6">
           <v-card :theme="isDarkTheme ? 'dark' : 'light'">
             <v-card-title class="d-flex align-center">
               Security Policy Editor
@@ -365,8 +408,34 @@ onBeforeUnmount(() => {
             </v-card-text>
           </v-card>
         </v-col>
-      </v-row>
+       <v-col cols="12" xl="6">
+        <v-card variant="plain">
+          <v-card-title class="d-flex align-center">
+            Connectivity Graph
+            <v-spacer />
+            <v-switch
+              v-model="showConnectivity"
+              color="primary"
+              inset
+              hide-details
+              density="compact"
+              label="Show graph"
+            />
+          </v-card-title>
+          <v-expand-transition>
+            <v-card-text v-if="showConnectivity">
+              <VpnConnectivityGraph
+                :loading="loading"
+                :nodes="nodes"
+                :policy="policy"
+              />
+            </v-card-text>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
+    </v-row>
     </v-sheet>
+
   </v-container>
 </template>
 

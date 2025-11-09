@@ -45,7 +45,7 @@ const codeIsReady = computed(() => {
 })
 
 const signInLabel = computed(() => {
-  return username.value ? 'Sign In' : 'Please input your email to sign in'
+  return username.value && password.value ? 'Sign In' : 'Continue'
 })
 
 const route = useRoute()
@@ -261,6 +261,7 @@ onMounted(() => {
       :elevation="0"
       :border="0"
       maxWidth="600"
+      color="transparent"
     >
       <Alert class="mb-4" v-model="alert"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="on">

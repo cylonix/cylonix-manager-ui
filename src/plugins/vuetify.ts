@@ -55,7 +55,7 @@ export default createVuetify({
     },
   },
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: 'system',
   },
   blueprint: getEnv('VITE_USE_MD3') ? md3 : undefined,
 })

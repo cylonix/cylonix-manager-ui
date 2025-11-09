@@ -30,7 +30,7 @@ const headers = ref([
     value: (n: any) => n.userShortInfo.displayName,
   },
   { title: 'IP', key: 'ip', value: (n: any) => n.wgInfo?.addresses[0] },
-  { title: 'Public key', key: 'publicKey'},
+  { title: 'Public key', key: 'publicKey' },
   {
     title: 'Last seen',
     key: 'lastSeen',
@@ -51,7 +51,7 @@ const alert = ref<Alert>({ on: false })
 const filterEnterpriseID = ref()
 const filterUser = ref()
 const filterOnlineOnly = ref()
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(20)
 const label = ref<Label>()
 const loading = ref(false)
 const loadOptions = ref()
@@ -249,7 +249,7 @@ function clearFilters() {
 }
 </script>
 <template>
-  <v-container>
+  <v-container class="ma-4" fluid>
     <Alert v-model="alert"></Alert>
     <v-chip size="large">Devices</v-chip>
 
@@ -281,27 +281,19 @@ function clearFilters() {
         />
       </v-col>
       <v-col cols="12" md="2">
-        <v-btn
-          color="primary"
-          @click="applyFilters"
-        >
-          Filter
-        </v-btn>
+        <v-btn color="primary" @click="applyFilters"> Filter </v-btn>
       </v-col>
       <v-col cols="12" md="2" align="end">
-        <v-btn
-          variant="outlined"
-          @click="clearFilters"
-        >
-          Clear Filters
-        </v-btn>
+        <v-btn variant="outlined" @click="clearFilters"> Clear Filters </v-btn>
       </v-col>
     </v-row>
 
     <!-- Action Row -->
-    <v-row align="center" justify="end">
-      <v-btn class="mx-1" @click="addButtonClicked">Add device</v-btn>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+    <v-row class="ma-2" align="center" justify="end">
+      <v-col cols="2" align="end">
+        <RefreshButton @refresh="loadItems(loadOptions)" />
+        <v-btn @click="addButtonClicked">Add device</v-btn>
+      </v-col>
     </v-row>
 
     <v-data-table-server

@@ -12,7 +12,7 @@ import type { Alert } from '@/plugins/alert'
 import { supPopAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 
-const props = defineProps(['namespace', 'addPops'])
+const props = defineProps(['forNamespace', 'namespaces', 'addPops'])
 const emit = defineEmits(['added'])
 const dialog = defineModel<boolean>()
 const { lgAndUp } = useDisplay()
@@ -22,12 +22,18 @@ const form = ref<InstanceType<typeof VForm>>()
 const isFormValid = ref(false)
 const loading = ref(false)
 const selected = ref<Array<number>>([])
+const namespace = ref<string>(props.forNamespace)
 
 const ready = computed(() => {
-  return selected.value.length > 0
+  return selected.value.length > 0 && namespace.value
 })
 
 async function add() {
+  confirmDialog.value = false
+  if (!namespace.value) {
+    alert.value = <Alert>{ on: true, text: 'Namespace is not specified.' }
+    return
+  }
   const popNames = props.addPops.filter((_: string, index: number) =>
     selected.value.some((i) => i == index)
   )
@@ -37,13 +43,13 @@ async function add() {
   }
   const ret = await tryRequest(async () => {
     loading.value = true
-    await supPopAPI().popApply(props.namespace, <PopApplyInput>{
+    await supPopAPI().popApply(namespace.value, <PopApplyInput>{
       pops: popNames,
     })
     newToast({
       on: true,
       color: 'green',
-      text: `Added '${popNames}' to '${props.namespace}' successfully`,
+      text: `Added '${popNames}' to '${namespace.value}' successfully`,
     })
     // Remove dialog after success.
     dialog.value = false
@@ -53,6 +59,17 @@ async function add() {
     alert.value = ret
   }
   loading.value = false
+}
+
+const confirmAddText = computed(() => {
+  const popNames = props.addPops.filter((_: string, index: number) =>
+    selected.value.some((i) => i == index)
+  )
+  return `Add ${popNames.join(', ')} to '${namespace.value}'`
+})
+const confirmDialog = ref<boolean>(false)
+function confirmAdd() {
+  confirmDialog.value = true
 }
 </script>
 
@@ -65,10 +82,17 @@ async function add() {
     :okDisabled="!ready"
     okText="Add"
     :title="`Add pop to ${namespace}`"
-    @ok="add"
+    @ok="confirmAdd"
     ><template v-slot:item>
-      <Alert v-if="alert.on" :alert="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <Alert v-model="alert"></Alert>
+      <v-form class="mt-4" ref="form" v-model="isFormValid" auto-complete="on">
+        <v-select
+          v-if="!forNamespace"
+          v-model="namespace"
+          :items="namespaces"
+          label="Please select a namespace"
+          required
+        ></v-select>
         <v-chip-group
           v-model="selected"
           selected-class="text-primary"
@@ -81,4 +105,13 @@ async function add() {
       </v-form>
     </template>
   </ConfirmDialog>
+  <ConfirmDialog
+    v-model="confirmDialog"
+    :loading="loading"
+    :okDisabled="false"
+    okText="Add"
+    :text="confirmAddText"
+    title="Confirm adding gateway to a namespace"
+    @ok="add"
+  />
 </template>

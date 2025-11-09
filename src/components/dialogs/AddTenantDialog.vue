@@ -63,7 +63,7 @@ async function add() {
     title="Add tenant"
     @ok="add"
     ><template v-slot:item>
-      <Alert v-if="alert.on" :alert="alert"></Alert>
+      <Alert v-model="alert"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="on">
         <CompanyNameInput v-model="name" check-available></CompanyNameInput>
         <NamespaceInput v-model="namespace" check-available></NamespaceInput>

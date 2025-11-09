@@ -66,7 +66,7 @@ async function add() {
     title="Add label"
     @ok="add"
     ><template v-slot:item>
-      <Alert v-if="alert.on" :alert="alert" class="my-2"></Alert>
+      <Alert v-model="alert" class="my-2"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="on">
         <v-row>
           <v-col :md="6" cols="12">

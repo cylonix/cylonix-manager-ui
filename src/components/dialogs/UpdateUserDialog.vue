@@ -19,7 +19,7 @@ const dialog = defineModel<boolean>()
 const alert = ref<Alert>({ on: false })
 const changed = ref()
 const form = ref<InstanceType<typeof VForm>>()
-const isFormValid = ref(false)
+const isFormValid = ref(true)
 const loading = ref(false)
 const displayName = ref()
 const email = ref()
@@ -28,6 +28,9 @@ const vpnMode = ref<MeshVpnMode>(
   props.user?.networkSetting?.meshVpnMode ?? MeshVpnMode.Tenant
 )
 const autoApproveDevice = ref(props.user?.autoApproveDevice ?? false)
+const gatewayEnabled = ref(
+  props.user?.networkSetting?.gatewayEnabled ?? false
+)
 
 const ready = computed(() => {
   const t = props.user
@@ -36,8 +39,10 @@ const ready = computed(() => {
     email.value == t?.email &&
     phone.value == t?.phone &&
     vpnMode.value == t?.networkSetting?.meshVpnMode &&
-    autoApproveDevice.value == t?.autoApproveDevice
-  return t && isFormValid.value && !same
+    autoApproveDevice.value == t?.autoApproveDevice &&
+    gatewayEnabled.value == t?.networkSetting?.gatewayEnabled
+  console.log("same", same, "isFormValid", isFormValid.value)
+  return t && (isFormValid.value !== false) && !same
 })
 
 const text = computed(() => {
@@ -52,6 +57,7 @@ watchEffect(() => {
   phone.value = t?.phone
   vpnMode.value = t?.networkSetting?.meshVpnMode ?? MeshVpnMode.Tenant
   autoApproveDevice.value = t?.autoApproveDevice ?? false
+  gatewayEnabled.value = t?.networkSetting?.gatewayEnabled ?? false
 })
 
 function change() {
@@ -69,6 +75,10 @@ async function update() {
     await userAPI.updateUser(t.userID, t.namespace, <UserUpdateInfo>{
       addEmail: t.email != email.value ? email.value : undefined,
       addPhone: t.phone != phone.value ? phone.value : undefined,
+      gatewayEnabled:
+        t.networkSetting?.gatewayEnabled != gatewayEnabled.value
+          ? gatewayEnabled.value
+          : undefined,
       autoApproveDevice:
         t.autoApproveDevice != autoApproveDevice.value
           ? autoApproveDevice.value
@@ -116,6 +126,17 @@ async function update() {
         <PhoneInput v-model="phone" @change="change"></PhoneInput>
         <v-chip
           class="ma-2"
+          :color="gatewayEnabled ? 'green' : 'grey'"
+          @click="gatewayEnabled = !gatewayEnabled"
+        >
+          <v-icon
+            start
+            :icon="gatewayEnabled ? 'mdi-check' : 'mdi-close'"
+          ></v-icon>
+          Gateway Enabled
+        </v-chip>
+        <v-chip
+          class="ma-2"
           :color="autoApproveDevice ? 'green' : 'grey'"
           @click="autoApproveDevice = !autoApproveDevice"
         >
@@ -125,7 +146,7 @@ async function update() {
           ></v-icon>
           Auto Approve Device
         </v-chip>
-        <MeshVpnModeSelect v-model="vpnMode"></MeshVpnModeSelect>
+        <MeshVpnModeSelect class="my-2" v-model="vpnMode"></MeshVpnModeSelect>
       </v-form>
     </template>
   </ConfirmDialog>

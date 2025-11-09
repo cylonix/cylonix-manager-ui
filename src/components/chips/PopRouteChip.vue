@@ -27,8 +27,10 @@ const confirmDeleteText = computed(() => {
     open-on-hover
   >
     <template v-slot:activator="{ props }">
-      <v-chip class="mx-1 my-1" v-bind="props" :size="size">
-        {{ route.dest }} -> {{ route.via }}
+      <v-chip class="mx-1 my-1" v-bind="props" >
+        <template v-slot:default>
+          <span class="route-label">{{ route.dest }} -> {{ route.via }}</span>
+        </template>
         <template v-slot:append>
           <DeleteButton
             :title="`Confirm to delete route ${route.dest}`"
@@ -55,3 +57,9 @@ const confirmDeleteText = computed(() => {
     </v-card>
   </v-menu>
 </template>
+
+<style scoped>
+.route-label {
+  min-width: 200px;
+}
+</style>

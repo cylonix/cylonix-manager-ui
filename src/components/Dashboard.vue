@@ -61,7 +61,7 @@ async function fetchUserStats() {
   const ret = await tryRequest(async () => {
     const stats = await userAPI.getUserSummary()
     console.log('User stats:', stats)
-    if (!stats || !stats.data) {
+    if (!stats || !stats.data || stats.data.length === 0) {
       return
     }
     deviceStats.value = {
@@ -81,13 +81,13 @@ async function fetchUserStats() {
       {
         key: 'online',
         title: 'Online',
-        value: deviceStats.value.online,
+        value: deviceStats.value.online ?? 0,
         color: 'green',
       },
       {
         key: 'offline',
         title: 'Offline',
-        value: deviceStats.value.offline,
+        value: deviceStats.value.offline ?? 0,
         color: 'grey',
       },
     ]
@@ -95,13 +95,13 @@ async function fetchUserStats() {
       {
         key: 'online',
         title: 'Online',
-        value: userStats.value.online,
+        value: userStats.value.online ?? 0,
         color: 'green',
       },
       {
         key: 'offline',
         title: 'Offline',
-        value: userStats.value.offline,
+        value: userStats.value.offline ?? 0,
         color: 'grey',
       },
     ]

@@ -86,7 +86,7 @@ async function add() {
     :title="`Add pop to ${namespace}`"
     @ok="add"
     ><template v-slot:item>
-      <Alert v-if="alert.on" :alert="alert"></Alert>
+      <Alert v-model="alert"></Alert>
       <v-form ref="form" v-model="isFormValid" auto-complete="on">
         <v-card-title>Please select the firewall to add</v-card-title>
         <v-chip-group
