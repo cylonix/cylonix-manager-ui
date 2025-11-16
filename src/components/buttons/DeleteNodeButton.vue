@@ -39,7 +39,7 @@ async function deleteItem(item: V1Node) {
 }
 
 function confirmDeleteText(item: V1Node): string {
-  return `Delete device "${item.name}" of user ${item.user?.loginName}"?`
+  return `Delete device "${item.givenName}" of user ${item.user?.loginName}"?`
 }
 </script>
 <template>

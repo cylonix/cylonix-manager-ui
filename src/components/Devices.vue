@@ -290,7 +290,7 @@ function clearFilters() {
 
     <!-- Action Row -->
     <v-row class="ma-2" align="center" justify="end">
-      <v-col cols="2" align="end">
+      <v-col cols="12" align="end">
         <RefreshButton @refresh="loadItems(loadOptions)" />
         <v-btn @click="addButtonClicked">Add device</v-btn>
       </v-col>

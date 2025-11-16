@@ -9,7 +9,7 @@ import { useDisplay } from 'vuetify'
 import type { Alert } from '@/plugins/alert'
 import { otpAPI, tryRequest } from '@/plugins/api'
 
-const emit = defineEmits(['change'])
+const emit = defineEmits(['change', 'sent'])
 const code = defineModel<string>('code')
 const codeSent = defineModel<boolean>('codeSent')
 
@@ -85,10 +85,12 @@ async function sendCode() {
       }
     } else if (ret.data.from) {
       from.value = ret.data.from
+      codeSent.value = true
+      emit('sent')
     }
-    codeSent.value = true
     canSendCode.value = false
     timer.value = 30
+    alert.value = {on: false}
   })
   if (ret) {
     console.log('sendCode error', ret)
@@ -142,8 +144,8 @@ async function sendCode() {
     block
     class="my-2"
     rounded="small"
-    variant="outlined"
     size="large"
+    variant="tonal"
     :disabled="!canSendCode || sendDisabled"
     :loading="loading"
     @click="sendCode()"

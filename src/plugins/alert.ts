@@ -11,6 +11,7 @@ export interface Alert {
   text?: string
   title?: string
   type?: 'success' | 'info' | 'warning' | 'error'
+  by?: string
 }
 
 export class AlertObject {

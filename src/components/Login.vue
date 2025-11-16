@@ -45,7 +45,11 @@ const codeIsReady = computed(() => {
 })
 
 const signInLabel = computed(() => {
-  return username.value && password.value ? 'Sign In' : 'Continue'
+  return username.value && password.value && code.value
+    ? 'Verify Code'
+    : username.value && password.value
+    ? 'Sign In'
+    : 'Continue'
 })
 
 const route = useRoute()
@@ -101,12 +105,6 @@ const mfaNeeded = ref<MfaType[]>([])
 const emailValid = computed(() => {
   return isEmail(username.value || '')
 })
-const emailCodeHint = computed(() => {
-  if (!codeSent.value) {
-    return 'Email verification code is required.'
-  }
-  return ''
-})
 
 async function submit() {
   let type = loginType.value
@@ -114,7 +112,12 @@ async function submit() {
   let credential = password.value
   loading.value = true
 
-  console.log('SessionID', props.sessionID ?? "Not set", 'Code', props.inviteCode)
+  console.log(
+    'SessionID',
+    props.sessionID ?? 'Not set',
+    'Code',
+    props.inviteCode
+  )
   if (type !== LoginType.Username) {
     try {
       const ret = await loginAPI.getOauthRedirectURL(
@@ -122,7 +125,7 @@ async function submit() {
         undefined,
         loginID,
         props.sessionID,
-        props.inviteCode,
+        props.inviteCode
       )
       if (ret.data.isDirectLoginWithPassword) {
         loginType.value = LoginType.Username
@@ -213,6 +216,7 @@ async function submit() {
         on: true,
         title: title,
         type: 'info',
+        by: 'mfa',
       }
       console.log(
         'Additional Authentication Required',
@@ -248,6 +252,28 @@ function emailChanged() {
   mfaNeeded.value = []
 }
 
+function codeChanged() {
+  if (alert.value.by == 'mfa') {
+    alert.value = { on: false }
+  }
+}
+
+function codeHasBeenSent() {
+  if (alert.value.by == 'mfa') {
+    alert.value = { on: false }
+  }
+}
+
+function reset() {
+  alert.value = { on: false }
+  code.value = undefined
+  codeSent.value = false
+  mfaNeeded.value = []
+  username.value = undefined
+  password.value = undefined
+  loginType.value = undefined
+}
+
 onMounted(() => {
   // Reset user store state when login component mounts
   userStore.$reset()
@@ -273,13 +299,13 @@ onMounted(() => {
           </v-col>
         </v-row>
         <EmailInput
-          v-if="loginType != LoginType.Phone"
+          v-if="loginType != LoginType.Phone && !mfaNeeded?.length"
           v-model="username"
           @change="emailChanged"
           @submit="submit"
         />
         <PasswordInput
-          v-if="loginType == LoginType.Username"
+          v-if="loginType == LoginType.Username && !mfaNeeded?.length"
           v-model="password"
           autofocus
           @change="changed"
@@ -288,10 +314,8 @@ onMounted(() => {
 
         <!-- Show appropriate MFA input when needed -->
         <template v-if="mfaNeeded?.length">
+          <p class="my-4 text-center text-h6 d-block">User: {{ username }}</p>
           <template v-if="mfaNeeded?.includes('email')">
-            <p class="my-4 text-center d-block">
-              {{ emailCodeHint }}
-            </p>
             <CodeInput
               v-model:code="code"
               v-model:codeSent="codeSent"
@@ -299,25 +323,35 @@ onMounted(() => {
               :sendDisabled="!emailValid"
               sendTitle="Send Code to Email"
               sendAgainTitle="Send Code to Email again"
-              @change="changed"
+              @change="codeChanged"
+              @sent="codeHasBeenSent"
             />
           </template>
         </template>
       </v-form>
       <v-btn
-        v-if="canLogin"
+        v-if="canLogin && codeIsReady"
         block
         class="my-2"
         color="blue"
         size="large"
         variant="tonal"
         rounded="small"
-        :disabled="!codeIsReady"
         :loading="loading"
         :text="signInLabel"
         @click="submit"
       >
       </v-btn>
+      <v-btn
+        v-if="mfaNeeded.length > 0"
+        block
+        class="my-2"
+        rounded="small"
+        size="large"
+        variant="outlined"
+        @click="reset"
+        >Reset</v-btn
+      >
 
       <v-row justify="center">
         <v-col cols="12">
