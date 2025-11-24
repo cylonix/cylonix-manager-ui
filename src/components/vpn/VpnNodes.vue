@@ -4,15 +4,16 @@
 -->
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { decamelize } from '@cylonix/humps'
 import { V1Node } from '@/clients/headscale/api'
+import { User } from '@/clients/manager/api'
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
-import { tryRequest, vpnAPI } from '@/plugins/api'
+import { tryRequest, userAPI, vpnAPI } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
 import { hexToBase64 } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
@@ -114,7 +115,6 @@ const adminViewHeaders = ref([
 
 const lgHeaders = ref([
   { title: 'Name', key: 'givenName' },
-  { title: 'User', key: 'user', value: (item: any) => item.user.loginName },
   {
     title: 'IP',
     key: 'ipAddresses',
@@ -150,6 +150,11 @@ const lgHeaders = ref([
   },
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
   { title: 'View details', key: 'viewDetails', align: 'center' },
+] as const)
+
+const lgHeadersWithUser = ref([
+  { title: 'User', key: 'userID', value: (item: any) => item.user.loginName },
+  ...lgHeaders.value,
 ] as const)
 
 const xsHeaders = ref([
@@ -211,6 +216,30 @@ const { isAdmin, isNetworkAdmin, namespace, isSysAdmin, user } = storeToRefs(
   store
 )
 
+onMounted(async () => {
+  await loadAllUsers()
+})
+
+const allUsers = ref<User[]>([])
+async function loadAllUsers() {
+  if (isSysAdmin.value || (!isAdmin.value && !isNetworkAdmin.value)) {
+    // Don't load users if not a (network) admin or sysadmin
+    return
+  }
+
+  loading.value = true
+  const ret = await tryRequest(async () => {
+    const ret = await userAPI.getUserList([])
+    allUsers.value = ret?.data.users ?? []
+    console.log('users:', allUsers.value, ret?.data)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  console.log('Done loading all users.')
+  loading.value = false
+}
+
 async function loadItems(options: any) {
   loadOptions.value = options
   loading.value = true
@@ -247,7 +276,7 @@ async function loadItems(options: any) {
       forNamespace,
       isAdmin.value ? undefined : network,
       filterOnlineOnly.value,
-      filterUser.value ? "username" : undefined,
+      filterUser.value ? 'username' : undefined,
       filterUser.value,
       sortBy,
       options.sortBy[0]?.order == 'desc' ? true : false,
@@ -270,6 +299,9 @@ const headers = computed(() => {
     return adminViewHeaders.value
   }
   if (lgAndUp.value) {
+    if (allUsers.value.length > 1) {
+      return lgHeadersWithUser.value
+    }
     return lgHeaders.value
   } else if (mdAndUp.value) {
     return mdHeaders.value
@@ -289,7 +321,11 @@ function clearFilters() {
   filterOnlineOnly.value = undefined
   loadItems(loadOptions.value)
 }
-</script>
+
+/**
+ * format the lastSeen time in a readable way
+ * @param lastSeen the lastSeen time in nanoseconds (Unix timestamp from headscale)
+ */</script>
 <template>
   <v-container class="ma-6" fluid>
     <Alert v-model="alert"></Alert>
@@ -334,20 +370,10 @@ function clearFilters() {
         />
       </v-col>
       <v-col cols="12" md="2">
-        <v-btn
-          color="primary"
-          @click="applyFilters"
-        >
-          Filter
-        </v-btn>
+        <v-btn color="primary" @click="applyFilters"> Filter </v-btn>
       </v-col>
       <v-col cols="12" md="2" align="end">
-        <v-btn
-          variant="outlined"
-          @click="clearFilters"
-        >
-          Clear Filters
-        </v-btn>
+        <v-btn variant="outlined" @click="clearFilters"> Clear Filters </v-btn>
       </v-col>
     </v-row>
 

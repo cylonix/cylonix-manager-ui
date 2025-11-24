@@ -7,6 +7,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { useDisplay } from 'vuetify'
 import type { V1Node, V1RouteSpec } from '@/clients/headscale/api'
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
@@ -17,6 +18,7 @@ import { useUserStore } from '@/stores/user'
 
 const { currentNode: nodeItem, setCurrentNode } = useCurrentNode()
 const router = useRouter()
+const { smAndUp } = useDisplay()
 const goBack = () => {
   router.back()
 }
@@ -200,6 +202,11 @@ async function deleteRoute(route: V1RouteSpec) {
 const addCapDialog = ref(false)
 const addCapAlert = ref<Alert>({ on: false })
 const newCapability = ref('')
+const renameDialog = ref(false)
+const renameAlert = ref<Alert>({ on: false })
+const newGivenName = ref('')
+const renameLoading = ref(false)
+
 function addCapability() {
   addCapDialog.value = true
 }
@@ -252,6 +259,57 @@ async function confirmAddCapability() {
     addCapAlert.value = ret
   }
 }
+
+function openRenameDialog() {
+  newGivenName.value = nodeItem.value?.givenName || ''
+  renameDialog.value = true
+}
+
+async function confirmRename() {
+  const nodeID = nodeItem.value?.id
+  if (!nodeID) {
+    renameAlert.value = {
+      on: true,
+      title: 'Node ID is missing',
+    }
+    return
+  }
+
+  const trimmedName = newGivenName.value.trim()
+  if (!trimmedName) {
+    renameAlert.value = {
+      on: true,
+      title: 'Name cannot be empty',
+    }
+    return
+  }
+
+  renameLoading.value = true
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceUpdateNode(nodeID, {
+      namespace: nodeItem.value?.namespace,
+      update: {
+        givenName: trimmedName,
+      },
+    })
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully renamed node to ${trimmedName}`,
+    })
+    // Refresh node data
+    const resp = await vpnAPI.headscaleServiceGetNode(nodeID)
+    if (!resp || !resp.data.node) {
+      return
+    }
+    setCurrentNode(resp.data.node)
+    renameDialog.value = false
+  })
+  if (ret) {
+    renameAlert.value = ret
+  }
+  renameLoading.value = false
+}
 </script>
 <template>
   <v-container v-if="nodeItem">
@@ -271,16 +329,27 @@ async function confirmAddCapability() {
         <v-card variant="text">
           <v-card-title class="d-flex align-center">
             <v-row>
-              <v-col cols="12" cols-xs="6">
+              <v-col cols="12" sm="8">
                 <v-icon class="mr-3" size="large">mdi-laptop</v-icon>
                 <div>
-                  <h2>{{ nodeItem.givenName }}</h2>
+                  <div class="d-flex align-center flex-wrap">
+                    <h2>{{ nodeItem.givenName }}</h2>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      class="ml-2"
+                      @click="openRenameDialog"
+                    >
+                      <v-icon size="small">mdi-pencil</v-icon>
+                    </v-btn>
+                  </div>
                   <div class="text-subtitle-1 text-medium-emphasis">
                     {{ nodeItem.user?.loginName }}
                   </div>
                 </div>
               </v-col>
-              <v-col cols="12" cols-xs="6" align="end">
+              <v-col cols="12" sm="4" :align="smAndUp ? 'end' : undefined">
                 <v-chip
                   :color="nodeItem.online ? 'success' : 'error'"
                   size="large"
@@ -311,8 +380,8 @@ async function confirmAddCapability() {
           <v-card-text>
             <div class="routes-container">
               <v-row class="field-row">
-                <v-col cols="8" class="field-title">Exit Node</v-col>
-                <v-col cols="4" class="field-value">{{
+                <v-col cols="6" class="field-title">Exit Node</v-col>
+                <v-col cols="6" class="field-value">{{
                   isExitNode(nodeItem as V1Node) ? 'Yes' :
                     hasExitNodeRoutes(nodeItem as V1Node) ? 'Pending Approval' : 'Not Allowed'
                 }}</v-col>
@@ -321,8 +390,8 @@ async function confirmAddCapability() {
                 class="field-row"
                 v-if="hasExitNodeRoutes(nodeItem as V1Node)"
               >
-                <v-col cols="8" class="field-title"></v-col>
-                <v-col cols="4" class="field-value">
+                <v-col cols="6" class="field-title"></v-col>
+                <v-col cols="6" class="field-value">
                   <v-btn
                     variant="flat"
                     rounded="xs"
@@ -757,6 +826,45 @@ async function confirmAddCapability() {
         outlined
         dense
       ></v-text-field>
+    </template>
+  </ConfirmDialog>
+
+  <ConfirmDialog
+    v-model="renameDialog"
+    title="Rename Machine"
+    okText="Rename"
+    :loading="renameLoading"
+    @ok="confirmRename"
+  >
+    <template v-slot:item>
+      <Alert v-model="renameAlert"></Alert>
+
+      <div class="mt-4 mb-2">
+        <div class="text-subtitle-2 text-medium-emphasis mb-1">Current name:</div>
+        <div class="text-h6">{{ nodeItem?.givenName }}</div>
+      </div>
+
+      <v-text-field
+        v-model="newGivenName"
+        label="New name"
+        placeholder="Enter new machine name"
+        variant="outlined"
+        :rules="[(v) => v && v.length > 4 && v.length < 33]"
+        density="compact"
+        class="mt-4"
+      ></v-text-field>
+
+      <v-alert
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mt-2"
+      >
+        <div class="text-caption">
+          <strong>Note:</strong> If the name conflicts with an existing machine,
+          the backend will automatically add a suffix to differentiate it.
+        </div>
+      </v-alert>
     </template>
   </ConfirmDialog>
 </template>

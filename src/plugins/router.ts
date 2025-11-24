@@ -41,6 +41,7 @@ import VpnUsers from '@/components/vpn/VpnUsers.vue'
 import WebPrivacyPolicy from '@/components/terms/WebPrivacyPolicy.vue'
 import WgDevices from '@/components/vpn/WgDevices.vue'
 import WgNodes from '@/components/vpn/WgNodes.vue'
+import VpnWgServers from '@/components/vpn/VpnWgServers.vue'
 import { useUserStore } from '@/stores/user'
 
 const routes = [
@@ -164,6 +165,11 @@ const routes = [
   {
     path: '/ui/vpn-wg-nodes',
     component: WgNodes,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ui/vpn-wg-servers',
+    component: VpnWgServers,
     meta: { requiresAuth: true }
   },
   { path: '/web-privacy-policy', component: WebPrivacyPolicy },

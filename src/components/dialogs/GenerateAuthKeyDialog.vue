@@ -105,6 +105,7 @@ function done() {
             <h3>Description</h3>
             <p>Add a description to help identify this key</p>
             <v-text-field
+              class="mt-2"
               v-model="description"
               label="Description (Optional)"
               clearable
@@ -113,7 +114,7 @@ function done() {
             <!-- Reusable Option -->
             <h3>Reusable</h3>
             <p>
-              A resuable key can be used to authenticate multiple devices. If
+              A reusable key can be used to authenticate multiple devices. If
               unchecked, the key will be single-use.
             </p>
             <v-switch v-model="reusable" label="Reusable Key" persistent-hint />
@@ -123,6 +124,7 @@ function done() {
             <p>Set the number of days before this key expires.</p>
             <p>Minimum 1 day, maximum 90 days.</p>
             <v-text-field
+              class="mt-2"
               v-model="expirationDays"
               label="Expiration (days)"
               type="number"

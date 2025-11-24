@@ -120,6 +120,12 @@ function updateRail() {
         to="/ui/vpn-nodes"
       ></v-list-item>
       <v-list-item
+        v-if="loggedIn && !isSysAdmin"
+        title="WireGuard Servers"
+        prepend-icon="mdi-server-network"
+        to="/ui/vpn-wg-servers"
+      ></v-list-item>
+      <v-list-item
         v-if="loggedIn && !isAdmin"
         title="Auth Keys"
         prepend-icon="mdi-key-chain"

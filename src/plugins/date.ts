@@ -18,6 +18,9 @@ export function toShortFmt(d: Date): string {
 
 export function shortTs(timestamp?: string|number): string | undefined {
   if (timestamp) {
+    if (typeof timestamp === 'number') {
+      timestamp *= 1000 // convert to milliseconds
+    }
     const d = new Date(timestamp)
     const now = new Date()
     if (d.toDateString() == now.toDateString()) {

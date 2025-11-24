@@ -8,6 +8,8 @@
         "headscale",
         "iconsets",
         "materialdesignicons",
+        "mkey",
+        "nodekey",
         "nonroot",
         "pinia"
     ]

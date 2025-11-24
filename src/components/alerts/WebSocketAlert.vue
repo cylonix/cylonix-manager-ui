@@ -16,7 +16,7 @@ const headers = ref([
   {
     title: 'Created At',
     key: 'createdAt',
-    value: (item: any) => shortTs(item.createdAt * 1000),
+    value: (item: any) => shortTs(item.createdAt),
   },
   { title: 'Enterprise ID', key: 'namespace' },
   { title: 'State', key: 'state' },

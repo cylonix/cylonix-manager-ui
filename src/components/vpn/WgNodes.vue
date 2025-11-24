@@ -38,7 +38,7 @@ const headers = ref([
   {
     title: 'Last seen',
     key: 'lastSeen',
-    value: (item: any) => shortTs(item.lastSeen * 1000),
+    value: (item: any) => shortTs(item.lastSeen),
   },
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)

@@ -34,7 +34,7 @@ const headers = ref([
   {
     title: 'Last seen',
     key: 'lastSeen',
-    value: (item: any) => shortTs(item.lastSeen * 1000),
+    value: (item: any) => shortTs(item.lastSeen),
   },
   { title: 'Exit node', key: 'exitNode', align: 'center' },
   { title: 'VPN Labels', key: 'vpnLabels', align: 'end' },

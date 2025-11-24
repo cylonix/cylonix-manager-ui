@@ -39,7 +39,7 @@ const headers = ref([
   {
     title: 'Invited at',
     key: 'createdAt',
-    value: (item: any) => shortTs(item.createdAt * 1000),
+    value: (item: any) => shortTs(item.createdAt),
   },
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
 ] as const)

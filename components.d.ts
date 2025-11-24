@@ -135,6 +135,7 @@ declare module 'vue' {
     VpnRoutes: typeof import('./src/components/vpn/VpnRoutes.vue')['default']
     VpnUserKeys: typeof import('./src/components/vpn/VpnUserKeys.vue')['default']
     VpnUsers: typeof import('./src/components/vpn/VpnUsers.vue')['default']
+    VpnWgServers: typeof import('./src/components/vpn/VpnWgServers.vue')['default']
     WebPrivacyPolicy: typeof import('./src/components/terms/WebPrivacyPolicy.vue')['default']
     WebSocketAlert: typeof import('./src/components/alerts/WebSocketAlert.vue')['default']
     WgDevices: typeof import('./src/components/vpn/WgDevices.vue')['default']

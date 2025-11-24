@@ -10,6 +10,7 @@ import { decamelize } from '@cylonix/humps'
 import { PredefinedRoles, User } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
+import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
@@ -17,11 +18,19 @@ const sysAdminHeaders = ref([
   { title: 'Enterprise ID', key: 'namespace' },
   { title: 'User ID', key: 'id', align: 'center' },
   { title: 'Name', key: 'displayName' },
-  { title: 'Email', key: 'email' },
-  { title: 'Phone', key: 'phone' },
   { title: 'Login', key: 'login' },
   { title: 'Network Domain', key: 'networkDomain' },
   { title: 'Roles', key: 'roles', align: 'center' },
+  {
+    title: 'Created At',
+    key: 'createdAt',
+    value: (item: any) => shortTs(item.createdAt),
+  },
+  {
+    title: 'Updated At',
+    key: 'updatedAt',
+    value: (item: any) => shortTs(item.updatedAt),
+  },
   { title: 'Mesh VPN mode', key: 'networkSetting.meshVpnMode' },
   { title: 'Mesh VPN Enabled', key: 'wgEnabled', align: 'center' },
   { title: 'Gateway Enabled', key: 'gatewayEnabled', align: 'center' },
