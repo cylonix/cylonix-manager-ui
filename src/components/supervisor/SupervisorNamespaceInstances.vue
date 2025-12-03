@@ -89,12 +89,12 @@ async function loadSystemPops() {
   const ret = await tryRequest(async () => {
     const ret = await supPopAPI().getPopList()
     allPops.value = ret?.data.popList?.map((p) => p.name) ?? []
-    console.log('instances:', ret?.data)
+    console.log('system pops:', ret?.data)
   })
   if (ret) {
     alert.value = ret
   }
-  console.log('Done loading pop instances.')
+  console.log('Done loading system pops.')
   loading.value = false
 }
 

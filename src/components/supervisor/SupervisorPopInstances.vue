@@ -43,6 +43,7 @@ const headers = ref([
   { title: 'Routes', key: 'routes' },
   { title: 'Status', key: 'status', align: 'center' },
   { title: 'Tunnels', key: 'tunnels' },
+  { title: "Nats", key: "nats" },
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
@@ -240,6 +241,11 @@ function isDeviceHostRoutesVisible(item: PopInstance): boolean {
           <template v-slot:item.tunnels="{ item }">
             <PopTunnelChip v-for="n in item.tunnels" :tunnel="n">
             </PopTunnelChip>
+          </template>
+
+          <template v-slot:item.nats="{ item }">
+            <PopNatChip v-for="n in item.nats" :nat="n">
+            </PopNatChip>
           </template>
 
           <template v-slot:item.actions="{ item }">

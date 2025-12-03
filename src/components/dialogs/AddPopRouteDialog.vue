@@ -27,16 +27,19 @@ const { lgAndUp } = useDisplay()
 
 const alert = ref<Alert>({ on: false })
 const dest = ref('')
+const viaInput = ref('')
 const form = ref<InstanceType<typeof VForm>>()
 const isFormValid = ref(false)
 const loading = ref(false)
 const toPop = ref<number | undefined>()
+const toNat = ref<number | undefined>()
 
 const ready = computed(() => {
   return (
     isFormValid.value &&
-    toPop.value !== undefined &&
-    toPop.value >= 0 &&
+    (toPop.value !== undefined || toNat.value !== undefined) &&
+    ((toPop.value !== undefined && toPop.value >= 0) ||
+      (toNat.value !== undefined && toNat.value >= 0)) &&
     dest.value.trim() !== ''
   )
 })
@@ -69,44 +72,58 @@ async function add() {
     }
     return
   }
-  if (toPop.value === undefined) {
+  if (toPop.value === undefined && toNat.value === undefined) {
     alert.value = <Alert>{
       on: true,
-      text: 'Please select a next hop pop.',
-    }
-    return
-  }
-  const to = toPops.value[toPop.value]
-  if (!to) {
-    alert.value = <Alert>{
-      on: true,
-      text: 'Please select a next hop pop.',
+      text: 'Please select a next hop pop or nat.',
     }
     return
   }
   var dev: string | undefined = undefined
   var via: string | undefined = undefined
-  for (const v of props.pop?.bvis ?? []) {
-    if (!v.loop?.name.includes(to.name)) {
-      continue
+  if (toPop.value !== undefined) {
+    const to = toPops.value[toPop.value]
+    if (!to) {
+      alert.value = <Alert>{
+        on: true,
+        text: 'next hop pop is not found',
+      }
+      return
     }
-    dev = v.loop?.name
-    break
+    for (const v of props.pop?.bvis ?? []) {
+      if (!v.loop?.name.includes(to.name)) {
+        continue
+      }
+      dev = v.loop?.name
+      break
+    }
+    for (const v of to.bvis ?? []) {
+      if (!v.loop?.name.includes(props.pop?.name ?? '')) {
+        continue
+      }
+      via = v.loop?.cidr[0]?.split('/')[0]
+      break
+    }
+    if (!dev || !via) {
+      console.log('dev or via is not found:', dev, via)
+      alert.value = <Alert>{
+        on: true,
+        text: `Cannot find BVI for next hop pop ${to}.`,
+      }
+      return
+    }
   }
-  for (const v of to.bvis ?? []) {
-    if (!v.loop?.name.includes(props.pop?.name ?? '')) {
-      continue
+  if (toNat.value !== undefined) {
+    const nat = props.pop?.nats ? props.pop.nats[toNat.value] : undefined
+    if (!nat) {
+      alert.value = <Alert>{
+        on: true,
+        text: 'next hop nat is not found',
+      }
+      return
     }
-    via = v.loop?.cidr[0]?.split('/')[0]
-    break
-  }
-  if (!dev || !via) {
-    console.log('dev or via is not found:', dev, via)
-    alert.value = <Alert>{
-      on: true,
-      text: `Cannot find BVI for next hop pop ${to}.`,
-    }
-    return
+    dev = nat.name
+    via = viaInput.value
   }
   const ret = await tryRequest(async () => {
     loading.value = true
@@ -159,14 +176,23 @@ async function add() {
               label="Destination e.g. 0.0.0.0/0"
               required
             ></NameInput>
+            <NameInput
+              v-model="viaInput"
+              label="Next hop IP address e.g. 10.6.14.5"
+            ></NameInput>
           </v-col>
           <v-col :md="8" cols="12" align="start">
             <v-chip class="mb-2" size="large" variant="text"
-              >Select next hop pop</v-chip
+              >Select next hop pop or a nat interface</v-chip
             >
-            <v-chip-group v-model="toPop" mandatory column>
+            <v-chip-group v-model="toPop" column>
               <v-chip class="mx-2" v-for="p in toPopNames" filter>{{
                 p
+              }}</v-chip>
+            </v-chip-group>
+            <v-chip-group v-if="pop?.nats" v-model="toNat" column>
+              <v-chip class="mx-2" v-for="n in pop?.nats" filter>{{
+                n.name
               }}</v-chip>
             </v-chip-group>
           </v-col>

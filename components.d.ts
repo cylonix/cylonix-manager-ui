@@ -90,6 +90,7 @@ declare module 'vue' {
     PhoneInput: typeof import('./src/components/inputs/PhoneInput.vue')['default']
     Policies: typeof import('./src/components/Policies.vue')['default']
     PopBVIChip: typeof import('./src/components/chips/PopBVIChip.vue')['default']
+    PopNatChip: typeof import('./src/components/chips/PopNatChip.vue')['default']
     PopRouteChip: typeof import('./src/components/chips/PopRouteChip.vue')['default']
     PopTunnelChip: typeof import('./src/components/chips/PopTunnelChip.vue')['default']
     PrivacyPolicy: typeof import('./src/components/terms/PrivacyPolicy.vue')['default']

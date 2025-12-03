@@ -361,11 +361,13 @@ onMounted(() => {
       <GoogleSignIn
         :sessionID="sessionID"
         :inviteCode="inviteCode"
+        :redirect="redirect"
         v-model:alert="alert"
       />
       <AppleSignin
         :sessionID="sessionID"
         :inviteCode="inviteCode"
+        :redirect="redirect"
         v-model:alert="alert"
       />
       <v-row justify="center">

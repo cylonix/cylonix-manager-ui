@@ -91,12 +91,12 @@ async function loadItems(options: any) {
     )
     totalItems.value = ret?.data.count ?? 0
     serverItems.value = ret?.data.wgInstances ?? []
-    console.log('wg instances:', serverItems.value, ret?.data)
+    console.log('wg gateways:', serverItems.value, ret?.data)
   })
   if (ret) {
     alert.value = ret
   }
-  console.log('Done loading wg instances.')
+  console.log('Done loading wg gateways.')
   loading.value = false
 }
 

@@ -188,3 +188,23 @@ export function supWgAPI() {
 
 // Headscale APIs
 export const vpnAPI = new HeadscaleServiceApi(config, '/vpn', instance)
+export interface NodeHealth {
+  subsys: string | null
+  error: string | null
+}
+
+export function parseNodeHealth(health: string | null): NodeHealth | undefined {
+  if (!health) {
+    return undefined
+  }
+  try {
+    var parsed = JSON.parse(health)
+    parsed.Error = parsed.Error.replace("Tailscale ", '❌ ')
+    const s = JSON.stringify(decamelizeKeys(parsed))
+    const ret = JSON.parse(s) as NodeHealth
+    return ret
+  } catch (e) {
+    console.error('Failed to parse node health:', e)
+    return undefined
+  }
+}

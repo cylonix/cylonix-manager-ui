@@ -3,6 +3,7 @@
         "autogroup",
         "autogroups",
         "Bvi",
+        "bvis",
         "decamelize",
         "derp",
         "headscale",
@@ -11,6 +12,7 @@
         "mkey",
         "nodekey",
         "nonroot",
-        "pinia"
+        "pinia",
+        "subsys"
     ]
 }

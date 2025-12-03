@@ -13,7 +13,7 @@ import { V1Node } from '@/clients/headscale/api'
 import { User } from '@/clients/manager/api'
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
-import { tryRequest, userAPI, vpnAPI } from '@/plugins/api'
+import { tryRequest, userAPI, vpnAPI, parseNodeHealth } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
 import { hexToBase64 } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
@@ -87,11 +87,6 @@ const adminViewHeaders = ref([
     value: (item: any) => shortTs(item.createdAt),
   },
   {
-    title: 'Last seen',
-    key: 'lastSeen',
-    value: (item: any) => shortTs(item.lastSeen),
-  },
-  {
     title: 'Expiry',
     key: 'expiry',
     value: (item: any) => shortTs(item.expiry),
@@ -108,7 +103,8 @@ const adminViewHeaders = ref([
   },
   { title: 'Forced tags', key: 'forcedTags' },
   { title: 'Invalid tags', key: 'invalidTags' },
-  { title: 'Online', key: 'online' },
+  { title: 'Online', key: 'lastSeenOrOnline' },
+  { title: 'Health', key: 'health' },
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
   { title: 'View details', key: 'viewDetails', align: 'center' },
 ] as const)
@@ -148,6 +144,7 @@ const lgHeaders = ref([
     key: 'expiry',
     value: (item: any) => formatExpiry(item.expiry),
   },
+  { title: 'Health', key: 'health' },
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
   { title: 'View details', key: 'viewDetails', align: 'center' },
 ] as const)
@@ -167,7 +164,6 @@ const smHeaders = ref([
   {
     title: 'Last seen',
     key: 'lastSeenOrOnline',
-    value: (item: any) => shortTs(item.lastSeen),
   },
   { title: 'Details', key: 'viewDetails', align: 'center' },
 ] as const)
@@ -325,7 +321,8 @@ function clearFilters() {
 /**
  * format the lastSeen time in a readable way
  * @param lastSeen the lastSeen time in nanoseconds (Unix timestamp from headscale)
- */</script>
+ */
+</script>
 <template>
   <v-container class="ma-6" fluid>
     <Alert v-model="alert"></Alert>
@@ -392,6 +389,20 @@ function clearFilters() {
         <ShortenTextChip
           :shown="23"
           :text="item.user?.name"
+          withSuffix
+        ></ShortenTextChip>
+      </template>
+
+      <template v-slot:item.health="{ item }">
+        <ShortenTextChip
+          v-if="item.health"
+          :shown="23"
+          :text="
+            parseNodeHealth(item.health)?.subsys +
+            ': ' +
+            parseNodeHealth(item.health)?.error
+          "
+          :shortText="parseNodeHealth(item.health)?.subsys"
           withSuffix
         ></ShortenTextChip>
       </template>

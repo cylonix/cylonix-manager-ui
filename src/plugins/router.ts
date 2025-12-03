@@ -103,7 +103,10 @@ const routes = [
     path: '/oauth-success/:sessionID?',
     name: 'oauth-success',
     component: OauthSuccess,
-    props: true // Passing route params as props
+    props: (route: any) => ({
+      sessionID: route.params.sessionID,
+      redirect: route.query.redirect,
+    })
   },
   { path: '/policies', component: Policies, meta: { requiresAuth: true } },
   { path: '/privacy-policy', component: PrivacyPolicy },

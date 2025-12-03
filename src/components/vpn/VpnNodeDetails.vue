@@ -11,7 +11,7 @@ import { useDisplay } from 'vuetify'
 import type { V1Node, V1RouteSpec } from '@/clients/headscale/api'
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
-import { tryRequest, vpnAPI } from '@/plugins/api'
+import { tryRequest, vpnAPI, parseNodeHealth } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
@@ -368,6 +368,16 @@ async function confirmRename() {
               </v-col>
             </v-row>
           </v-card-title>
+          <v-card-text v-if="nodeItem.health">
+            <v-row justify="end">
+              <v-col class="field-title">{{
+                parseNodeHealth(nodeItem.health)?.subsys
+              }}</v-col>
+              <v-col>
+                {{ parseNodeHealth(nodeItem.health)?.error }}
+              </v-col>
+            </v-row>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -541,8 +551,7 @@ async function confirmRename() {
               </v-row>
               <v-row class="field-row" v-if="nodeItem.capabilities">
                 <v-col cols="4" class="field-title">Capabilities</v-col>
-                <v-col cols="8" class="field-value"
-                  >
+                <v-col cols="8" class="field-value">
                   <AddButton
                     @click="addCapability"
                     label="Add Capability"
@@ -815,7 +824,10 @@ async function confirmRename() {
       </v-col>
     </v-row>
   </v-container>
-   <ConfirmDialog v-model="addCapDialog" title="Add Capability" @ok="confirmAddCapability"
+  <ConfirmDialog
+    v-model="addCapDialog"
+    title="Add Capability"
+    @ok="confirmAddCapability"
     ><template v-slot:item>
       <Alert v-model="addCapAlert"></Alert>
       <v-text-field
@@ -840,7 +852,9 @@ async function confirmRename() {
       <Alert v-model="renameAlert"></Alert>
 
       <div class="mt-4 mb-2">
-        <div class="text-subtitle-2 text-medium-emphasis mb-1">Current name:</div>
+        <div class="text-subtitle-2 text-medium-emphasis mb-1">
+          Current name:
+        </div>
         <div class="text-h6">{{ nodeItem?.givenName }}</div>
       </div>
 
@@ -854,12 +868,7 @@ async function confirmRename() {
         class="mt-4"
       ></v-text-field>
 
-      <v-alert
-        type="info"
-        variant="tonal"
-        density="compact"
-        class="mt-2"
-      >
+      <v-alert type="info" variant="tonal" density="compact" class="mt-2">
         <div class="text-caption">
           <strong>Note:</strong> If the name conflicts with an existing machine,
           the backend will automatically add a suffix to differentiate it.

@@ -14,12 +14,12 @@ import getEnv from '@/utils/env'
 const theme = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)
 const alert = defineModel<Alert>('alert')
-const props = defineProps(['sessionID', 'inviteCode'])
+const props = defineProps(['sessionID', 'inviteCode', 'redirect'])
 const loading = ref(false)
 
 async function loginWithApple() {
   loading.value = true
-  console.log("invite code", props.inviteCode)
+  console.log('invite code', props.inviteCode)
   const err = await tryRequest(async () => {
     const ret = await loginAPI.getOauthRedirectURL(
       'apple',
@@ -29,7 +29,11 @@ async function loginWithApple() {
       props.inviteCode,
       undefined,
       undefined,
-      getEnv('VITE_LOGIN_REDIRECT_BASE_URL') + '/' + (props.sessionID ?? '')
+      getEnv('VITE_LOGIN_REDIRECT_BASE_URL') +
+        '/' +
+        (props.sessionID ?? (props.redirect
+          ? `?redirect=${encodeURIComponent(props.redirect ?? '')}`
+          : ''))
     )
     if (ret.data.encodedRedirectURL) {
       window.location.href = ret.data.encodedRedirectURL ?? ''

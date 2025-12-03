@@ -16,7 +16,8 @@ const router = useRouter()
 const userStore = useUserStore()
 
 interface Props {
-  sessionID?: string
+  sessionID?: string,
+  redirect?: string,
 }
 const props = defineProps<Props>()
 
@@ -54,6 +55,11 @@ onMounted(async () => {
           state.loginConfirmSession = confirmSession
           router.push('/confirm-session')
         } else {
+          if (props.redirect) {
+            console.log('redirecting to', decodeURIComponent(props.redirect))
+            router.push(decodeURIComponent(props.redirect))
+            return
+          }
           router.push('/')
         }
       })

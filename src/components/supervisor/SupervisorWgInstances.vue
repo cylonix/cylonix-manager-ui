@@ -54,7 +54,7 @@ async function loadSystemWgs() {
   const ret = await tryRequest(async () => {
     const ret = await supWgAPI().getWgInstanceList()
     allWgs.value = ret?.data.wgInstances ?? []
-    console.log('instances:', ret?.data)
+    console.log('wg instances:', ret?.data)
   })
   if (ret) {
     alert.value = ret
