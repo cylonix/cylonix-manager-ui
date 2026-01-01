@@ -28,9 +28,7 @@ const vpnMode = ref<MeshVpnMode>(
   props.user?.networkSetting?.meshVpnMode ?? MeshVpnMode.Tenant
 )
 const autoApproveDevice = ref(props.user?.autoApproveDevice ?? false)
-const gatewayEnabled = ref(
-  props.user?.networkSetting?.gatewayEnabled ?? false
-)
+const gatewayEnabled = ref(props.user?.networkSetting?.gatewayEnabled ?? false)
 
 const ready = computed(() => {
   const t = props.user
@@ -41,7 +39,6 @@ const ready = computed(() => {
     vpnMode.value == t?.networkSetting?.meshVpnMode &&
     autoApproveDevice.value == t?.autoApproveDevice &&
     gatewayEnabled.value == t?.networkSetting?.gatewayEnabled
-  console.log("same", same, "isFormValid", isFormValid.value)
   return t && (isFormValid.value !== false) && !same
 })
 
@@ -62,10 +59,14 @@ watchEffect(() => {
 
 function change() {
   changed.value = true
-  form.value?.validate()
 }
 
 async function update() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
+
   const ret = await tryRequest(async () => {
     const t = props.user
     if (!t) {
@@ -74,7 +75,11 @@ async function update() {
     loading.value = true
     await userAPI.updateUser(t.userID, t.namespace, <UserUpdateInfo>{
       addEmail: t.email != email.value ? email.value : undefined,
-      addPhone: t.phone != phone.value ? phone.value : undefined,
+      addPhone: t.phone != phone.value && phone.value ? phone.value : undefined,
+      delPhone: t.phone != phone.value && !phone.value ? t.phone : undefined,
+      displayName:
+        t.displayName != displayName.value ? displayName.value : undefined,
+      setDisplayName: t.displayName != displayName.value,
       gatewayEnabled:
         t.networkSetting?.gatewayEnabled != gatewayEnabled.value
           ? gatewayEnabled.value
@@ -116,14 +121,16 @@ async function update() {
   >
     <template class="mt-2" v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" class="mt-2" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <NameInput
+          class="mt-2"
           v-model="displayName"
           label="Display name"
+          max="64"
           @change="change"
         ></NameInput>
-        <EmailInput v-model="email" @change="change"></EmailInput>
-        <PhoneInput v-model="phone" @change="change"></PhoneInput>
+        <EmailInput class="mt-2" v-model="email" @change="change"></EmailInput>
+        <PhoneInput class="mt-2" v-model="phone" @change="change"></PhoneInput>
         <v-chip
           class="ma-2"
           :color="gatewayEnabled ? 'green' : 'grey'"

@@ -29,7 +29,7 @@ const store = useUserStore()
 const { isAdmin, isSysAdmin } = storeToRefs(store)
 const defaultNamespace = computed(() => {
   if (isSysAdmin.value) {
-    return "default"
+    return 'default'
   }
   return isAdmin.value ? store.user?.namespace : undefined
 })
@@ -49,7 +49,13 @@ const username = ref()
 const networkDomain = ref()
 
 const ready = computed(() => {
-  return isFormValid.value
+  return (
+    isFormValid.value !== false &&
+    name.value !== '' &&
+    username.value !== '' &&
+    password.value !== '' &&
+    networkDomain.value !== ''
+  )
 })
 
 onMounted(async () => {
@@ -58,7 +64,11 @@ onMounted(async () => {
 
 var emailSyncFromUsername = false
 watch(username, (newUsername) => {
-  if (newUsername && isEmail(newUsername) && (!email.value || emailSyncFromUsername)) {
+  if (
+    newUsername &&
+    isEmail(newUsername) &&
+    (!email.value || emailSyncFromUsername)
+  ) {
     email.value = newUsername
     emailSyncFromUsername = true
   }
@@ -77,11 +87,15 @@ async function loadUserRoles() {
 }
 
 async function addUser() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const ret = await tryRequest(async () => {
     loading.value = true
     await userAPI.postUser(
       <User>{
-        userID: "00000000-0000-0000-0000-000000000000", // nil userID to be set by the backend
+        userID: '00000000-0000-0000-0000-000000000000', // nil userID to be set by the backend
         networkDomain: networkDomain.value,
         displayName: name.value,
         email: email.value,
@@ -130,34 +144,48 @@ const phoneRequired = computed(() => {
     @ok="addUser"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="add-user">
+      <v-form
+        class="mt-2"
+        ref="form"
+        v-model="isFormValid"
+        auto-complete="add-user"
+      >
         <v-row class="my-2">
           <v-col sm="12" lg="6">
             <NamespaceInput
+              class="mt-2"
               v-if="withNamespace"
               v-model="namespace"
             ></NamespaceInput>
             <NameInput
+              class="mt-2"
               v-model="name"
               autocomplete="name"
               label="Name (First Last)"
               required
             />
             <PhoneInput
+              class="mt-2"
               v-model="phone"
               requiredMessage="Phone or email is required"
               :required="phoneRequired"
             />
             <EmailInput
+              class="mt-2"
               v-model="email"
               requiredMessage="Phone or email is required"
               :required="emailRequired"
             />
           </v-col>
           <v-col sm="12" lg="6">
-            <UsernameInput v-if="withUsername" v-model="username" />
-            <PasswordWithConfirmationInput v-model="password" />
+            <UsernameInput
+              class="mt-2"
+              v-if="withUsername"
+              v-model="username"
+            />
+            <PasswordWithConfirmationInput class="mt-2" v-model="password" />
             <RolesSelect
+              class="mt-2"
               v-model="rolesSelected"
               title="Select user roles"
               :loading="loading"

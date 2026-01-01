@@ -36,7 +36,7 @@ const toNat = ref<number | undefined>()
 
 const ready = computed(() => {
   return (
-    isFormValid.value &&
+    isFormValid.value !== false &&
     (toPop.value !== undefined || toNat.value !== undefined) &&
     ((toPop.value !== undefined && toPop.value >= 0) ||
       (toNat.value !== undefined && toNat.value >= 0)) &&
@@ -64,6 +64,10 @@ const toPopNames = computed(() => {
 */
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const popID = props.pop?.id
   if (!popID) {
     alert.value = <Alert>{
@@ -177,21 +181,26 @@ async function add() {
               required
             ></NameInput>
             <NameInput
+              class="mt-2"
               v-model="viaInput"
               label="Next hop IP address e.g. 10.6.14.5"
             ></NameInput>
           </v-col>
           <v-col :md="8" cols="12" align="start">
-            <v-chip class="mb-2" size="large" variant="text"
-              >Select next hop pop or a nat interface</v-chip
+            <p class="mx-2 text-large">Select next hop pop or a nat interface</p>
+            <v-chip class="mx-2 mb-2" size="large" variant="text"
+              >Next hop pop</v-chip
             >
-            <v-chip-group v-model="toPop" column>
-              <v-chip class="mx-2" v-for="p in toPopNames" filter>{{
+            <v-chip-group class="mx-4" v-model="toPop" column>
+              <v-chip class="me-2" v-for="p in toPopNames" filter>{{
                 p
               }}</v-chip>
             </v-chip-group>
-            <v-chip-group v-if="pop?.nats" v-model="toNat" column>
-              <v-chip class="mx-2" v-for="n in pop?.nats" filter>{{
+            <v-chip class="mx-2 mb-2" size="large" variant="text"
+              >Next hop nat interfaces</v-chip
+            >
+            <v-chip-group v-if="pop?.nats" class="mx-4" v-model="toNat" column>
+              <v-chip class="me-2" v-for="n in pop?.nats" filter>{{
                 n.name
               }}</v-chip>
             </v-chip-group>

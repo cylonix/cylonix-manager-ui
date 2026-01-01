@@ -33,6 +33,10 @@ const ready = computed(() => {
 })
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const fw = props.addFws.find(
     (_: any, index: number) => selectedFw.value == index
   )
@@ -87,7 +91,7 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <v-card-title>Please select the firewall to add</v-card-title>
         <v-chip-group
           class="mx-2 my-2"

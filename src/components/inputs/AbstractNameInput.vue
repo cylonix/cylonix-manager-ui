@@ -8,6 +8,10 @@ import { ref, watch } from 'vue'
 import type { VTextField } from 'vuetify/components'
 import type { Alert } from '@/plugins/alert'
 
+defineOptions({
+  inheritAttrs: false
+})
+
 const emit = defineEmits(['change', 'check', 'submit'])
 const value = defineModel<string>()
 const alert = defineModel<Alert>('alert')
@@ -38,6 +42,7 @@ const rules = ref([
 function updated() {
   checkSuccess.value = undefined
   alert.value = { on: false }
+  textField.value?.resetValidation()
   emit('change')
 }
 const textField = ref<InstanceType<typeof VTextField>>()
@@ -63,11 +68,12 @@ function onKeydown(e: KeyboardEvent) {
   <Alert v-if="alert" :alert="alert"></Alert>
   <v-text-field
     v-model="value"
-    v-bind="inputProps"
+    v-bind="{ ...inputProps, ...$attrs }"
     :label="label"
     ref="textField"
     :required="required"
     :rules="inputProps.rules ?? rules"
+    validate-on="submit"
     @update:model-value="updated"
     @keydown="onKeydown"
   >

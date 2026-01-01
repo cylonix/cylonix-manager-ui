@@ -14,8 +14,7 @@ import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
-const sysAdminHeaders = ref([
-  { title: 'Enterprise ID', key: 'namespace' },
+const adminHeaders = ref([
   { title: 'User ID', key: 'id', align: 'center' },
   { title: 'Name', key: 'displayName' },
   { title: 'Login', key: 'login' },
@@ -25,6 +24,11 @@ const sysAdminHeaders = ref([
     title: 'Created At',
     key: 'createdAt',
     value: (item: any) => shortTs(item.createdAt),
+  },
+  {
+    title: 'Last Seen',
+    key: 'lastSeen',
+    value: (item: any) => shortTs(item.lastSeen),
   },
   {
     title: 'Updated At',
@@ -39,20 +43,9 @@ const sysAdminHeaders = ref([
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
 ] as const)
 
-const adminHeaders = ref([
-  { title: 'User ID', key: 'id', align: 'center' },
-  { title: 'Name', key: 'displayName' },
-  { title: 'Email', key: 'email' },
-  { title: 'Phone', key: 'phone' },
-  { title: 'Login', key: 'login' },
-  { title: 'Network Domain', key: 'networkDomain' },
-  { title: 'Roles', key: 'roles', align: 'center' },
-  { title: 'Mesh VPN mode', key: 'networkSetting.meshVpnMode' },
-  { title: 'Mesh VPN Enabled', key: 'wgEnabled', align: 'center' },
-  { title: 'Gateway Enabled', key: 'gatewayEnabled', align: 'center' },
-  { title: 'Auto approve device', key: 'auto-approve-device', align: 'center' },
-  { title: 'Auto accept routes', key: 'auto-accept-routes', align: 'center' },
-  { title: 'Actions', key: 'actions', align: 'center', sortable: false },
+const sysAdminHeaders = ref([
+  { title: 'Enterprise ID', key: 'namespace' },
+  ...adminHeaders.value,
 ] as const)
 
 const addUserDialog = ref(false)

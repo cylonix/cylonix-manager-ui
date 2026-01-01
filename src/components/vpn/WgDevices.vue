@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { WgDevice } from '@/clients/manager/api'
+import { decamelize } from '@cylonix/humps'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, wgAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
@@ -13,10 +14,15 @@ import { newToast } from '@/plugins/toast'
 import { compactList } from '@/plugins/utils'
 
 const headers = ref([
-  { title: 'Device ID', key: 'deviceID', align: 'center' },
   { title: 'Enterprise ID', key: 'namespace' },
+  {
+    title: 'User ID',
+    key: 'userID',
+  },
+  { title: 'Device ID', key: 'deviceID', align: 'center' },
   { title: 'Name', key: 'name' },
   { title: 'Public key', key: 'publicKey', align: 'center' },
+  { title: 'Node ID', key: 'nodeID', align: 'center' },
   {
     title: 'Addresses',
     key: 'addresses',
@@ -74,12 +80,28 @@ async function deleteItem(item: WgDevice) {
 async function loadItems(options: any) {
   loadOptions.value = options
   loading.value = true
+  let sortBy: string | undefined
+  let sortDesc: string | undefined
+  for (const [i, sort] of options.sortBy.entries()) {
+    if (i === 0) {
+      sortBy = decamelize(sort.key)
+      sortDesc = sort.order ?? ''
+    } else {
+      sortBy = sortBy + ',' + decamelize(sort.key)
+      sortDesc = sortDesc + ',' + (sort.order ?? '')
+    }
+  }
   const ret = await tryRequest(async () => {
     const ret = await wgAPI.listVpnDevice(
       [],
       undefined,
+      undefined,
+      undefined,
+      undefined,
       options.page,
-      options.itemsPerPage
+      options.itemsPerPage,
+      sortBy,
+      sortDesc
     )
     totalItems.value = ret?.data.total ?? 0
     serverItems.value = ret?.data.devices ?? []
@@ -117,6 +139,9 @@ function confirmDeleteText(item: WgDevice): string {
       :search="search"
       @update:options="loadItems"
     >
+      <template v-slot:item.userID="{ item }">
+        <ShortenTextChip :text="item.userID"></ShortenTextChip>
+      </template>
       <template v-slot:item.deviceID="{ item }">
         <ShortenTextChip :text="item.deviceID"></ShortenTextChip>
       </template>

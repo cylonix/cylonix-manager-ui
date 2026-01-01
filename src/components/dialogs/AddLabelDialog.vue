@@ -25,10 +25,14 @@ const name = ref('')
 const scope = ref<string>()
 
 const ready = computed(() => {
-  return isFormValid.value
+  return isFormValid.value !== false && name.value !== ''
 })
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const ret = await tryRequest(async () => {
     loading.value = true
     await labelAPI.createLabels([
@@ -67,15 +71,19 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert" class="my-2"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <v-row>
           <v-col :md="6" cols="12">
             <NameInput v-model="name" label="Label name" required></NameInput>
             <DescriptionInput
+              class="mt-2"
               v-model="description"
               label="Label description"
             ></DescriptionInput>
-            <LabelCategorySelect v-model="category"></LabelCategorySelect>
+            <LabelCategorySelect
+              class="mt-2"
+              v-model="category"
+            ></LabelCategorySelect>
           </v-col>
           <v-col :md="6" cols="12" align="center">
             <v-chip size="large" variant="plain">Select a label color</v-chip>

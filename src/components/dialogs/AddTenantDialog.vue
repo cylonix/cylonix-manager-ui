@@ -25,10 +25,16 @@ const name = ref('')
 const phone = ref('')
 
 const ready = computed(() => {
-  return isFormValid.value
+  return (
+    isFormValid.value !== false && name.value !== '' && namespace.value !== ''
+  )
 })
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const ret = await tryRequest(async () => {
     loading.value = true
     const ret = await tenantAPI.addTenantConfig(<TenantConfig>{
@@ -64,11 +70,19 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
-        <CompanyNameInput v-model="name" check-available></CompanyNameInput>
-        <NamespaceInput v-model="namespace" check-available></NamespaceInput>
-        <EmailInput v-model="email"></EmailInput>
-        <PhoneInput v-model="phone"></PhoneInput>
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
+        <CompanyNameInput
+          class="mt-2"
+          v-model="name"
+          check-available
+        ></CompanyNameInput>
+        <NamespaceInput
+          class="mt-2"
+          v-model="namespace"
+          check-available
+        ></NamespaceInput>
+        <EmailInput class="mt-2" v-model="email"></EmailInput>
+        <PhoneInput class="mt-2" v-model="phone"></PhoneInput>
       </v-form>
     </template>
   </ConfirmDialog>

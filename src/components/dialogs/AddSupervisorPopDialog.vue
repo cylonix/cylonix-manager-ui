@@ -30,7 +30,12 @@ const net = ref(0)
 const underlay = ref('')
 
 const ready = computed(() => {
-  return isFormValid.value
+  return (
+    isFormValid.value !== false &&
+    name.value !== '' &&
+    underlay.value !== '' &&
+    net.value > 0
+  )
 })
 
 /*
@@ -52,6 +57,10 @@ const ready = computed(() => {
 }
 */
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const ret = await tryRequest(async () => {
     loading.value = true
     const input = <PopConfigInput>{
@@ -99,21 +108,24 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <v-row>
           <v-col sm="12" lg="6">
             <NameInput v-model="name" label="Pop name"></NameInput>
             <NameInput
+              class="mt-2"
               v-model="underlay"
               label="Pop mesh underlay address"
             ></NameInput>
             <v-number-input
+              class="mt-2"
               control-variant="stacked"
               v-model="bandwidth"
               label="Bandwidth"
               inset
             ></v-number-input>
             <v-number-input
+              class="mt-2"
               v-model="net"
               label="Subnet assigned"
               control-variant="stacked"
@@ -122,14 +134,20 @@ async function add() {
           </v-col>
           <v-col sm="12" lg="6">
             <NameInput v-model="cloud" label="Cloud provider"></NameInput>
-            <NameInput v-model="city" label="Location city"></NameInput>
+            <NameInput
+              class="mt-2"
+              v-model="city"
+              label="Location city"
+            ></NameInput>
             <v-number-input
+              class="mt-2"
               v-model="latitude"
               label="Location latitude"
               control-variant="stacked"
               inset
             ></v-number-input>
             <v-number-input
+              class="mt-2"
               v-model="longitude"
               label="Location longitude"
               control-variant="stacked"

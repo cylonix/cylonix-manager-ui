@@ -25,7 +25,7 @@ const ready = computed(() => {
   if (!u || u.logins.length <= 0) {
     return false
   }
-  return isFormValid.value
+  return isFormValid.value !== false && password.value
 })
 
 function describeUser(user?: User): string {
@@ -39,10 +39,15 @@ const text = computed(() => {
   if (!u || u.logins.length <= 0) {
     return `Cannot change password for user "${d}" without logins.`
   }
-  return `Reset password for "${d}"`
+  return `Change password for "${d}"`
 })
 
-async function resetPassword() {
+async function changePassword() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
+
   const ret = await tryRequest(async () => {
     loading.value = true
     await userAPI.changePassword(props.user?.userID ?? '', <ChangePassword>{
@@ -52,13 +57,13 @@ async function resetPassword() {
     newToast({
       on: true,
       color: 'green',
-      text: 'User password reset success.',
+      text: 'User password change success.',
     })
   })
   if (ret) {
     alert.value = ret
   }
-  console.log('Done resetting user password.')
+  console.log('Done changing user password.')
   loading.value = false
 }
 </script>
@@ -71,13 +76,13 @@ async function resetPassword() {
     :okDisabled="!ready"
     okText="Submit"
     :text="text"
-    title="Reset password"
-    @ok="resetPassword"
+    title="Change password"
+    @ok="changePassword"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <PasswordWithConfirmationInput v-model="password" />
-        <NoteInput v-model="note" />
+        <NoteInput class="mt-4" v-model="note" />
       </v-form> </template
   ></ConfirmDialog>
 </template>

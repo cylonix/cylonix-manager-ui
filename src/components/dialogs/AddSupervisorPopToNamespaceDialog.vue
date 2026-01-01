@@ -29,6 +29,10 @@ const ready = computed(() => {
 })
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   confirmDialog.value = false
   if (!namespace.value) {
     alert.value = <Alert>{ on: true, text: 'Namespace is not specified.' }

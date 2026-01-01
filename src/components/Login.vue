@@ -19,6 +19,7 @@ import { AxiosError } from 'axios'
 const alert = ref<Alert>({ on: false })
 const code = ref()
 const codeSent = ref(false)
+const forgetPasswordDialog = ref(false)
 const form = ref<InstanceType<typeof VForm>>()
 const isFormValid = ref(false)
 const loginType = ref<LoginType>()
@@ -27,19 +28,43 @@ const namespace = ref()
 const namespaceType = ref('community')
 const password = ref()
 const saveApiKey = getEnv('VITE_SAVE_API_KEY')
+const contactEmail = getEnv('VITE_CONTACT_EMAIL')
+const companyWebsite = getEnv('VITE_COMPANY_WEBSITE')
 const username = ref()
 
 const canLogin = computed(() => {
   return (
-    isFormValid.value &&
+    isFormValid.value !== false &&
     ((loginType.value != LoginType.Phone && username.value) ||
       (code.value && code.value.length == 6))
   )
 })
 
-const codeIsReady = computed(() => {
+const showSubmitButton = computed(() => {
+  return (
+    ((loginType.value != LoginType.Phone && username.value) ||
+      (code.value && code.value.length == 6)) &&
+    codeIsReadyOrNotRequired.value
+  )
+})
+
+const codeIsReadyOrNotRequired = computed(() => {
   return (
     (mfaNeeded.value?.length && code.value && code.value.length == 6) ||
+    !mfaNeeded.value?.length
+  )
+})
+
+const showPasswordInput = computed(() => {
+  console.log(
+    'showPasswordInput:',
+    loginType.value,
+    password.value,
+    (loginType.value == LoginType.Username || password.value) &&
+      !mfaNeeded.value?.length
+  )
+  return (
+    (loginType.value == LoginType.Username || password.value) &&
     !mfaNeeded.value?.length
   )
 })
@@ -47,7 +72,7 @@ const codeIsReady = computed(() => {
 const signInLabel = computed(() => {
   return username.value && password.value && code.value
     ? 'Verify Code'
-    : username.value && password.value
+    : username.value && password.value && canLogin.value
     ? 'Sign In'
     : 'Continue'
 })
@@ -83,31 +108,28 @@ const router = useRouter()
 const userStore = useUserStore()
 const loginStore = useLoginStore()
 
-namespace.value = loginStore.namespace
-namespaceType.value = loginStore.namespaceType
-loginType.value = loginStore.loginType
-if (!Object.values(LoginType).includes(loginType.value)) {
-  loginType.value = LoginType.Username
-}
-
-watch(namespaceType, (newValue) => {
-  loginStore.$patch((state) => {
-    state.namespaceType = newValue
-  })
-})
-watch(namespace, (newValue) => {
-  loginStore.$patch((state) => {
-    state.namespace = newValue
-  })
-})
-
 const mfaNeeded = ref<MfaType[]>([])
 const emailValid = computed(() => {
   return isEmail(username.value || '')
 })
 
 async function submit() {
-  let type = loginType.value
+  // Validate form before proceeding
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    console.log('form invalid')
+    password.value = undefined
+    return
+  }
+
+  console.log(
+    'password is',
+    password.value ? 'set' : 'not set',
+    loginType.value
+  )
+
+  let type =
+    loginType.value ?? (password.value ? LoginType.Username : undefined)
   let loginID = username.value
   let credential = password.value
   loading.value = true
@@ -125,9 +147,18 @@ async function submit() {
         undefined,
         loginID,
         props.sessionID,
-        props.inviteCode
+        props.inviteCode,
+        undefined,
+        undefined,
+        getEnv('VITE_LOGIN_REDIRECT_BASE_URL') +
+          '/' +
+          (props.sessionID ??
+            (props.redirect
+              ? `?redirect=${encodeURIComponent(props.redirect ?? '')}`
+              : ''))
       )
       if (ret.data.isDirectLoginWithPassword) {
+        console.log('Direct login with password required')
         loginType.value = LoginType.Username
       } else if (ret.data.encodedRedirectURL) {
         window.location.href = ret.data.encodedRedirectURL
@@ -171,13 +202,17 @@ async function submit() {
       code.value,
       MfaType.Email
     )
+    console.log('login success', ret.data)
     userStore.$patch((state) => {
       state.apiKey = saveApiKey ? ret.data.apiKey : ''
       state.loginConfirmSession = ret.data.confirmSession
       state.tenant = ret.data.tenant
       state.user = ret.data.user
       state.updatedAt = Date.now()
-      console.log('login success', ret.data)
+    })
+    loginStore.$patch((state) => {
+      state.loginType = type!
+      state.namespace = ret.data.user?.namespace
     })
     if (ret.data.confirmSession) {
       console.log('confirm session', ret.data.confirmSession)
@@ -228,6 +263,9 @@ async function submit() {
     let text = e.toString()
     if (e instanceof Error) {
       text = e.message
+      if (text.includes('invalid MFA code')) {
+        text = 'Invalid Code.'
+      }
     }
     alert.value = {
       on: true,
@@ -262,6 +300,10 @@ function codeHasBeenSent() {
   if (alert.value.by == 'mfa') {
     alert.value = { on: false }
   }
+}
+
+function forgotPassword() {
+  forgetPasswordDialog.value = true
 }
 
 function reset() {
@@ -305,12 +347,24 @@ onMounted(() => {
           @submit="submit"
         />
         <PasswordInput
-          v-if="loginType == LoginType.Username && !mfaNeeded?.length"
+          v-if="showPasswordInput"
           v-model="password"
           autofocus
           @change="changed"
           @submit="submit"
         />
+        <v-row v-if="showPasswordInput" justify="end" class="mt-n2">
+          <v-col cols="auto">
+            <v-btn
+              variant="text"
+              size="small"
+              color="primary"
+              @click="forgotPassword"
+            >
+              Forgot Password?
+            </v-btn>
+          </v-col>
+        </v-row>
 
         <!-- Show appropriate MFA input when needed -->
         <template v-if="mfaNeeded?.length">
@@ -330,7 +384,7 @@ onMounted(() => {
         </template>
       </v-form>
       <v-btn
-        v-if="canLogin && codeIsReady"
+        v-if="showSubmitButton"
         block
         class="my-2"
         color="blue"
@@ -384,11 +438,22 @@ onMounted(() => {
             <a
               variant="text"
               density="compact"
-              href="https://cylonix.io"
+              :href="companyWebsite"
               target="_blank"
               class="text-decoration-none px-1"
             >
-              Learn more at cylonix.io
+              Learn more at {{ companyWebsite }}
+            </a>
+          </p>
+          <p class="text-body-2 text-center d-block">
+            Need help or sign up for your company? Contact
+            <a
+              variant="text"
+              density="compact"
+              :href="`mailto:${contactEmail}`"
+              class="text-decoration-none px-1"
+            >
+              {{ contactEmail }}
             </a>
           </p>
         </v-col>
@@ -411,4 +476,11 @@ onMounted(() => {
     </v-sheet>
     <CookiesPolicyBanner />
   </v-container>
+  <ForgetPasswordDialog
+    v-if="username"
+    v-model="forgetPasswordDialog"
+    v-model:namespace="namespace"
+    v-model:namespaceType="namespaceType"
+    :email="username"
+  />
 </template>

@@ -100,7 +100,7 @@ function done() {
         <v-card-title>Generate Auth Key</v-card-title>
         <v-card-text>
           <Alert v-model="alert" />
-          <v-form @submit.prevent="generate">
+          <v-form class="mt-2" @submit.prevent="generate">
             <!-- Description -->
             <h3>Description</h3>
             <p>Add a description to help identify this key</p>

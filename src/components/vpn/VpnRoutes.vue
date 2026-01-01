@@ -86,12 +86,19 @@ async function loadItems(options: any) {
       text: 'Only Network Admins can view routes.',
     }
   }
-  var sortBy = options?.sortBy?.[0]?.key
-  if (sortBy) {
-    sortBy = decamelize(sortBy)
-  }
-  if (sortBy === 'node') {
-    sortBy = 'node_id'
+  let sortBy: string | undefined
+  let sortDesc: string | undefined
+  for (const [i, sort] of options.sortBy.entries()) {
+    if (i === 0) {
+      sortBy = decamelize(sort.key)
+      if (sortBy === 'node') {
+        sortBy = 'node_id'
+      }
+      sortDesc = sort.order ?? ''
+    } else {
+      sortBy = sortBy + ',' + decamelize(sort.key)
+      sortDesc = sortDesc + ',' + (sort.order ?? '')
+    }
   }
 
   const ret = await tryRequest(async () => {
@@ -103,7 +110,7 @@ async function loadItems(options: any) {
       undefined,
       undefined,
       sortBy,
-      options.sortBy[0]?.order == 'desc' ? true : false,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )

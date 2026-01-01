@@ -9,6 +9,7 @@ const emit = defineEmits(['change'])
 const password = defineModel<string>()
 const props = defineProps({
   newPassword: Boolean,
+  class: [String, Object, Array],
 })
 
 const confirmPasswordInput = ref()
@@ -31,9 +32,10 @@ function changePassword() {
   confirmPasswordInput.value.validate()
 }
 </script>
-<template>
+<template :class="class">
   <PasswordInput v-model="password" :label="label" @change="changePassword" />
   <PasswordInput
+    class="mt-2"
     v-model="confirmPassword"
     ref="confirmPasswordInput"
     :label="confirmLabel"

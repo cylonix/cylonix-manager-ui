@@ -22,7 +22,7 @@ const loading = ref(false)
 const name = ref('')
 
 const ready = computed(() => {
-  return isFormValid.value
+  return isFormValid.value !== false && name.value
 })
 
 onMounted(async () => {
@@ -30,6 +30,11 @@ onMounted(async () => {
 })
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
+
   const ret = await tryRequest(async () => {
     loading.value = true
     await deviceAPI.postDevice(<Device>{
@@ -62,8 +67,13 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="add-device">
-        <NameInput v-model="name" label="Device name"></NameInput>
+      <v-form
+        class="mt-2"
+        ref="form"
+        v-model="isFormValid"
+        auto-complete="add-device"
+      >
+        <NameInput class="mt-2" v-model="name" label="Device name"></NameInput>
         <v-chip-group selected-class="text-primary" column mandatory>
           <v-chip v-for="tag in DeviceType" :key="tag" :text="tag"></v-chip>
         </v-chip-group>

@@ -14,7 +14,7 @@ defineProps<{ logins: Array<UserLogin> }>()
       <v-menu class="mt-2" activator="parent">
         <v-card class="p-2">
           <v-card-title>Sign in with {{ n.loginType }}</v-card-title>
-          <v-data-table :items="[n]" hide-default-footer hide-default-header>
+          <v-data-table :items="[n]" hide-default-footer>
             <template v-slot:bottom></template
           ></v-data-table>
         </v-card>

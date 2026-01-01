@@ -14,7 +14,9 @@ interface TermsSection {
 }
 
 const lastUpdated = ref('April 22, 2025')
-const contactEmail = ref('contact@cylonix.io')
+const contactEmail = ref(
+  import.meta.env.VITE_CONTACT_EMAIL || 'contact@cylonix.io'
+)
 
 const termsSections = ref<TermsSection[]>([
   {

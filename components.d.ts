@@ -129,6 +129,7 @@ declare module 'vue' {
     UserSignUpInput: typeof import('./src/components/inputs/UserSignUpInput.vue')['default']
     VpnApiKeys: typeof import('./src/components/vpn/VpnApiKeys.vue')['default']
     VpnConnectivityGraph: typeof import('./src/components/vpn/VpnConnectivityGraph.vue')['default']
+    VpnExpiryMenu: typeof import('./src/components/vpn/VpnExpiryMenu.vue')['default']
     VpnLabelChips: typeof import('./src/components/chips/VpnLabelChips.vue')['default']
     VpnNodeDetails: typeof import('./src/components/vpn/VpnNodeDetails.vue')['default']
     VpnNodes: typeof import('./src/components/vpn/VpnNodes.vue')['default']

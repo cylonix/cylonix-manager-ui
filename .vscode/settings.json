@@ -2,17 +2,20 @@
     "cSpell.words": [
         "autogroup",
         "autogroups",
+        "axios",
         "Bvi",
         "bvis",
         "decamelize",
         "derp",
         "headscale",
         "iconsets",
+        "intf",
         "materialdesignicons",
         "mkey",
         "nodekey",
         "nonroot",
         "pinia",
-        "subsys"
+        "subsys",
+        "VITE"
     ]
 }

@@ -19,11 +19,14 @@ import { useUserStore } from '@/stores/user'
 // Do not use ref for this. It will cause the editor to freeze.
 // https://github.com/microsoft/monaco-editor/issues/3154
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
+let diffEditor: monaco.editor.IStandaloneDiffEditor | null = null
 
 const theme = useTheme()
 const alert = ref<Alert>({ on: false })
 const loading = ref(false)
 const editorContainer = ref<HTMLElement>()
+const diffEditorContainer = ref<HTMLElement>()
+const showDiff = ref(false)
 const isDarkTheme = ref(theme.global.current.value.dark)
 const isPolicyDifferentThanSaved = ref(false)
 const savedPolicy = ref('')
@@ -48,15 +51,11 @@ async function loadNodes() {
 
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListNodes(
-      isNetworkAdmin.value
-        ? network
-          ? undefined
-          : uID
-        : uID,
+      isNetworkAdmin.value ? (network ? undefined : uID) : uID,
       [],
       forNamespace,
       network
-    );
+    )
     nodes.value = ret?.data.nodes ?? []
     console.log('nodes:', ret?.data)
   })
@@ -188,6 +187,64 @@ async function initEditor() {
 function toggleTheme() {
   isDarkTheme.value = !isDarkTheme.value
   editor?.updateOptions({ theme: isDarkTheme.value ? 'vs-dark' : 'vs' })
+  if (diffEditor) {
+    diffEditor.dispose()
+    if (showDiff.value) {
+      setTimeout(() => initDiffEditor(), 100)
+    }
+  }
+}
+
+function toggleDiffView() {
+  showDiff.value = !showDiff.value
+
+  if (showDiff.value) {
+    // Initialize diff editor
+    setTimeout(() => initDiffEditor(), 100)
+  } else {
+    // Dispose diff editor and reinitialize normal editor
+    diffEditor?.dispose()
+    diffEditor = null
+    console.log('Toggling diff view off...')
+    // Always dispose and recreate the editor to ensure it renders properly
+    if (editor) {
+      editor.dispose()
+      editor = null
+    }
+    setTimeout(() => {
+      console.log('Initializing normal editor after diff view...')
+      initEditor()
+    }, 100)
+  }
+}
+
+function initDiffEditor() {
+  const container = diffEditorContainer.value
+  if (!container) return
+
+  console.log('Initializing Monaco diff editor...')
+
+  const originalModel = monaco.editor.createModel(
+    savedPolicy.value || defaultPolicy,
+    'json'
+  )
+  const modifiedModel = monaco.editor.createModel(
+    policy.value || defaultPolicy,
+    'json'
+  )
+
+  diffEditor = monaco.editor.createDiffEditor(container, {
+    theme: isDarkTheme.value ? 'vs-dark' : 'vs',
+    automaticLayout: true,
+    readOnly: true,
+    renderSideBySide: true,
+    minimap: { enabled: false },
+  })
+
+  diffEditor.setModel({
+    original: originalModel,
+    modified: modifiedModel,
+  })
 }
 
 // Update theme watcher
@@ -311,6 +368,10 @@ async function savePolicy() {
         text: `Successfully set policy for "${user.value?.networkDomain}"`,
       })
       alert.value = { on: false }
+      await loadPolicy()
+      if (showDiff.value) {
+        toggleDiffView()
+      }
     })
     if (ret) {
       alert.value = ret
@@ -323,6 +384,9 @@ async function savePolicy() {
 function discardChanges() {
   const contentToRestore = savedPolicy.value || defaultPolicy
   editor?.setValue(contentToRestore)
+  if (showDiff.value) {
+    toggleDiffView()
+  }
 }
 
 onMounted(() => {
@@ -333,6 +397,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   // Don't dispose. It will freeze the editor.
   editor?.dispose()
+  diffEditor?.dispose()
 })
 </script>
 
@@ -340,7 +405,7 @@ onBeforeUnmount(() => {
   <v-container fluid>
     <v-sheet class="mx-auto" border="0" elevation="0">
       <v-row>
-        <v-col cols="12" xl="6">
+        <v-col cols="12" :xl="showDiff ? 12 : 6">
           <v-card :theme="isDarkTheme ? 'dark' : 'light'">
             <v-card-title class="d-flex align-center">
               Security Policy Editor
@@ -361,6 +426,16 @@ onBeforeUnmount(() => {
                       : 'mdi-moon-waning-crescent'
                   }}
                 </v-icon>
+              </v-btn>
+              <v-btn
+                color="info"
+                variant="outlined"
+                class="mr-2"
+                :disabled="!isPolicyDifferentThanSaved"
+                @click="toggleDiffView"
+                :prepend-icon="showDiff ? 'mdi-pencil' : 'mdi-file-compare'"
+              >
+                {{ showDiff ? 'Back to Editor' : 'View Diff' }}
               </v-btn>
               <v-btn
                 color="error"
@@ -398,44 +473,53 @@ onBeforeUnmount(() => {
               type="warning"
               class="mb-2"
             >
-              The policy has been changed. Click the Save Policy button to apply
-              the changes.
+              The policy local copy is not the same as the backend saved copy.
+              Click the Save Policy button to apply the changes. Or discard the
+              local changes.
             </v-alert>
             <v-card-text>
               <Alert v-model="alert" />
 
-              <div ref="editorContainer" class="mt-2 editor-container"></div>
+              <div
+                v-if="!showDiff"
+                ref="editorContainer"
+                class="mt-2 editor-container"
+              ></div>
+              <div
+                v-else
+                ref="diffEditorContainer"
+                class="mt-2 editor-container"
+              ></div>
             </v-card-text>
           </v-card>
         </v-col>
-       <v-col cols="12" xl="6">
-        <v-card variant="plain">
-          <v-card-title class="d-flex align-center">
-            Connectivity Graph
-            <v-spacer />
-            <v-switch
-              v-model="showConnectivity"
-              color="primary"
-              inset
-              hide-details
-              density="compact"
-              label="Show graph"
-            />
-          </v-card-title>
-          <v-expand-transition>
-            <v-card-text v-if="showConnectivity">
-              <VpnConnectivityGraph
-                :loading="loading"
-                :nodes="nodes"
-                :policy="policy"
+        <v-col cols="12" :xl="showDiff ? 12 : 6">
+          <v-card variant="plain">
+            <v-card-title class="d-flex align-center">
+              Connectivity Graph
+              <v-spacer />
+              <v-switch
+                v-model="showConnectivity"
+                color="primary"
+                inset
+                hide-details
+                density="compact"
+                label="Show graph"
               />
-            </v-card-text>
-          </v-expand-transition>
-        </v-card>
-      </v-col>
-    </v-row>
+            </v-card-title>
+            <v-expand-transition>
+              <v-card-text v-if="showConnectivity">
+                <VpnConnectivityGraph
+                  :loading="loading"
+                  :nodes="nodes"
+                  :policy="policy"
+                />
+              </v-card-text>
+            </v-expand-transition>
+          </v-card>
+        </v-col>
+      </v-row>
     </v-sheet>
-
   </v-container>
 </template>
 

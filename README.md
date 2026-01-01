@@ -84,12 +84,12 @@ This creates Docker images with the following tags:
 
 - `cylonix/cylonix-manager-ui:${VERSION}`
 - `cylonix/cylonix-manager-ui:${RELEASE}`
-- `cylonix/cylonox-manager-ui:latest`
+- `cylonix/cylonix-manager-ui:latest`
 
 ## 🛠️ Available Commands
 
 | Command | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `make dev` | Installs dependencies and starts development server |
 | `make build` | Builds the application for production |
 | `make docker` | Creates Docker images |
@@ -105,7 +105,7 @@ This creates Docker images with the following tags:
 The application can be configured through environment variables in `.env.local`:
 
 | Variable | Description | Example |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `VITE_BASE_URL` | Base URL for the application | `/manager/v2` |
 | `VITE_SERVER_PORT` | Port for the development server | `3030` |
 | `VITE_MANAGER_API_TARGET_URL` | URL for Manager API | `https://manage.cylonix.io/` |
@@ -115,6 +115,9 @@ The application can be configured through environment variables in `.env.local`:
 | `VITE_WS_URL` | WebSocket URL for alerts | `ws://localhost:3030/ws/log/v1/alert` |
 | `VITE_LOGIN_REDIRECT_BASE_URL` | OAuth redirect URL | `http://localhost:3030/oauth-success` |
 | `VITE_USE_MD3` | Flag to use Material Design 3 | `true` |
+| `VITE_COMPANY_NAME` | Company name displayed in UI | `Cylonix INC.` |
+| `VITE_COMPANY_WEBSITE` | Company website URL | `https://cylonix.io` |
+| `VITE_CONTACT_EMAIL` | Contact email for support | `contact@cylonix.org` |
 
 ## ✨ Features
 

@@ -105,7 +105,7 @@ function copyLink() {
           machine, share the machine instead.
         </p>
 
-        <v-form @submit.prevent="sendInvites">
+        <v-form class="mt-2" @submit.prevent="sendInvites">
           <v-text-field
             v-model="emails"
             label="Email Addresses"

@@ -13,9 +13,11 @@ interface PolicySection {
   list?: string[]
 }
 
-const companyName = ref('EZBLOCK INC')
+const companyName = ref(import.meta.env.VITE_COMPANY_NAME || 'Cylonix INC.')
 const lastUpdated = ref('Feb 07, 2025')
-const contactEmail = ref('contact@cylonix.io')
+const contactEmail = ref(
+  import.meta.env.VITE_CONTACT_EMAIL || 'contact@cylonix.io'
+)
 
 const policySections = ref<PolicySection[]>([
   {

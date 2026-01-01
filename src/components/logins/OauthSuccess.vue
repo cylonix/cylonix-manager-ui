@@ -10,14 +10,15 @@ import type { Alert } from '@/plugins/alert'
 import { loginAPI, tryRequest } from '@/plugins/api'
 import { LoginType } from '@/clients/manager/api'
 import { useUserStore } from '@/stores/user'
+import { useLoginStore } from '@/stores/login'
 const alert = ref<Alert>({ on: false })
 const loading = ref<boolean>(false)
 const router = useRouter()
 const userStore = useUserStore()
-
+const loginStore = useLoginStore()
 interface Props {
-  sessionID?: string,
-  redirect?: string,
+  sessionID?: string
+  redirect?: string
 }
 const props = defineProps<Props>()
 
@@ -45,6 +46,10 @@ onMounted(async () => {
         undefined,
         props.sessionID
       )
+      loginStore.$patch((state) => {
+        state.loginType = ret.data.login.loginType
+        state.namespace = ret.data.user.namespace
+      })
       userStore.$patch((state) => {
         state.tenant = ret.data.tenant
         state.user = ret.data.user

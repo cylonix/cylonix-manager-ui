@@ -27,7 +27,13 @@ const pop = ref('')
 const underlay = ref('')
 
 const ready = computed(() => {
-  return isFormValid.value
+  return (
+    isFormValid.value !== false &&
+    name.value !== '' &&
+    net.value > 0 &&
+    ip.value !== '' &&
+    underlay.value !== ''
+  )
 })
 
 /*'{
@@ -42,6 +48,10 @@ const ready = computed(() => {
 }'*/
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const ret = await tryRequest(async () => {
     loading.value = true
     const input = <WgInstanceInput>{
@@ -84,18 +94,21 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <v-row>
           <v-col sm="12" lg="6">
             <NameInput
+              class="mt-2"
               v-model="name"
               label="WireGuard gateway name"
             ></NameInput>
             <NameInput
+              class="mt-2"
               v-model="underlay"
               label="Gateway mesh underlay address"
             ></NameInput>
             <v-number-input
+              class="mt-2"
               v-model="net"
               label="Subnet assigned"
               control-variant="stacked"
@@ -103,8 +116,8 @@ async function add() {
             ></v-number-input>
           </v-col>
           <v-col sm="12" lg="6">
-            <NameInput v-model="pop" label="Pop name"></NameInput>
-            <NameInput v-model="ip" label="IP address"></NameInput>
+            <NameInput class="mt-2" v-model="pop" label="Pop name"></NameInput>
+            <NameInput class="mt-2" v-model="ip" label="IP address"></NameInput>
           </v-col>
         </v-row>
       </v-form>

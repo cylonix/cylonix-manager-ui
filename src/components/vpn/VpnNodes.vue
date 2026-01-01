@@ -15,8 +15,10 @@ import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI, vpnAPI, parseNodeHealth } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
+import { newToast } from '@/plugins/toast'
 import { hexToBase64 } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
+import VpnExpiryMenu from './VpnExpiryMenu.vue'
 
 const router = useRouter()
 const { setCurrentNode } = useCurrentNode()
@@ -195,6 +197,14 @@ const filterEnterpriseID = ref()
 const filterUser = ref()
 const filterOnlineOnly = ref()
 
+// Expiry management
+const expiryMenuNode = ref<V1Node | null>(null)
+const showDisableExpiryDialog = ref(false)
+const showExpireNowDialog = ref(false)
+const showSetExpiryDialog = ref(false)
+const newExpiryDate = ref<Date | null>(null)
+const expiryLoading = ref(false)
+
 const hideFooter = computed(() => {
   return totalItems.value <= itemsPerPage.value
 })
@@ -249,16 +259,28 @@ async function loadItems(options: any) {
   }
   const network = user.value?.networkDomain
   console.log('uid=', uID, 'network=', network)
-  var sortBy = options.sortBy[0]?.key
-  if (sortBy) {
-    sortBy = decamelize(sortBy)
-  }
 
   var forNamespace = namespace.value
   if (isSysAdmin.value) {
     forNamespace = filterEnterpriseID.value
   }
 
+  let sortBy: string | undefined
+  let sortDesc: string | undefined
+  for (const [i, sort] of options.sortBy.entries()) {
+    if (i === 0) {
+      sortBy = decamelize(sort.key)
+      if (sortBy === 'online') {
+        sortBy = 'last_seen'
+      } else if (sortBy === 'name') {
+        sortBy = 'given_name'
+      }
+      sortDesc = sort.order ?? ''
+    } else {
+      sortBy = sortBy + ',' + decamelize(sort.key)
+      sortDesc = sortDesc + ',' + (sort.order ?? '')
+    }
+  }
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListNodes(
       isAdmin.value
@@ -275,7 +297,7 @@ async function loadItems(options: any) {
       filterUser.value ? 'username' : undefined,
       filterUser.value,
       sortBy,
-      options.sortBy[0]?.order == 'desc' ? true : false,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )
@@ -316,6 +338,118 @@ function clearFilters() {
   filterUser.value = undefined
   filterOnlineOnly.value = undefined
   loadItems(loadOptions.value)
+}
+
+// Expiry management functions
+function openExpiryMenu(item: V1Node, option: 'disable' | 'set' | 'now') {
+  expiryMenuNode.value = item
+  if (option === 'disable') {
+    showDisableExpiryDialog.value = true
+  } else if (option === 'set') {
+    // Set default to 6 months from now
+    const sixMonthsLater = new Date()
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+    newExpiryDate.value = sixMonthsLater
+    showSetExpiryDialog.value = true
+  } else if (option === 'now') {
+    showExpireNowDialog.value = true
+  }
+}
+
+async function confirmDisableExpiry() {
+  if (!expiryMenuNode.value?.id) return
+
+  expiryLoading.value = true
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceExpireNode(
+      expiryMenuNode.value!.id!,
+      '0001-01-01T00:00:00Z' // Zero timestamp to disable expiry
+    )
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully disabled expiry for ${
+        expiryMenuNode.value!.givenName
+      }`,
+    })
+    showDisableExpiryDialog.value = false
+    await loadItems(loadOptions.value)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  expiryLoading.value = false
+}
+
+async function confirmExpireNow() {
+  if (!expiryMenuNode.value?.id) return
+
+  expiryLoading.value = true
+  const ret = await tryRequest(async () => {
+    // Passing undefined expires the node immediately
+    await vpnAPI.headscaleServiceExpireNode(expiryMenuNode.value!.id!)
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully expired ${expiryMenuNode.value!.givenName}`,
+    })
+    showExpireNowDialog.value = false
+    await loadItems(loadOptions.value)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  expiryLoading.value = false
+}
+
+async function confirmSetExpiry() {
+  if (!expiryMenuNode.value?.id || !newExpiryDate.value) return
+
+  // Validate the date is not more than 6 months in the future
+  const maxDate = new Date()
+  maxDate.setMonth(maxDate.getMonth() + 6)
+
+  if (newExpiryDate.value > maxDate) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: 'Invalid date',
+      text: 'Expiry date cannot be more than 6 months in the future',
+    }
+    return
+  }
+
+  // Validate the date is in the future
+  if (newExpiryDate.value <= new Date()) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: 'Invalid date',
+      text: 'Expiry date must be in the future',
+    }
+    return
+  }
+
+  expiryLoading.value = true
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceExpireNode(
+      expiryMenuNode.value!.id!,
+      newExpiryDate.value!.toISOString()
+    )
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully set expiry for ${
+        expiryMenuNode.value!.givenName
+      } to ${newExpiryDate.value!.toLocaleDateString()}`,
+    })
+    showSetExpiryDialog.value = false
+    await loadItems(loadOptions.value)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  expiryLoading.value = false
 }
 
 /**
@@ -422,6 +556,15 @@ function clearFilters() {
           {{ item.givenName }}
         </p>
         <p>{{ item.user?.loginName }}</p>
+        <p>
+          <VpnExpiryMenu
+            :expiry="item.expiry"
+            withPrefix
+            @set="openExpiryMenu(item, 'set')"
+            @disable="openExpiryMenu(item, 'disable')"
+            @now="openExpiryMenu(item, 'now')"
+          />
+        </p>
       </template>
       <template v-slot:item.min="{ item }">
         <p>
@@ -441,10 +584,13 @@ function clearFilters() {
           }}
         </p>
         <p>
-          <span v-if="formatExpiry(item.expiry)"
-            >Expire {{ formatExpiry(item.expiry) }}</span
-          >
-          <span variant="text" v-else class="text-error">Expired</span>
+          <VpnExpiryMenu
+            :expiry="item.expiry"
+            withPrefix
+            @set="openExpiryMenu(item, 'set')"
+            @disable="openExpiryMenu(item, 'disable')"
+            @now="openExpiryMenu(item, 'now')"
+          />
         </p>
       </template>
       <template v-slot:item.lastSeenOrOnline="{ item }">
@@ -459,6 +605,14 @@ function clearFilters() {
           >mdi-circle</v-icon
         >
       </template>
+      <template v-slot:item.expiry="{ item }">
+        <VpnExpiryMenu
+          :expiry="item.expiry"
+          @set="openExpiryMenu(item, 'set')"
+          @disable="openExpiryMenu(item, 'disable')"
+          @now="openExpiryMenu(item, 'now')"
+        />
+      </template>
       <template v-slot:item.viewDetails="{ item }">
         <MoreButton @click="navigateToDetails(item)" />
       </template>
@@ -471,5 +625,72 @@ function clearFilters() {
         </DeleteNodeButton>
       </template>
     </v-data-table-server>
+
+    <!-- Disable Expiry Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showDisableExpiryDialog"
+      title="Disable Expiry"
+      :loading="expiryLoading"
+      @ok="confirmDisableExpiry"
+    >
+      <template v-slot:item
+        ><p>
+          Are you sure you want to disable expiry for
+          <strong>{{ expiryMenuNode?.givenName }}</strong
+          >?
+        </p>
+        <p class="text-caption text-grey mt-2">
+          This will set the node to never expire.
+        </p></template
+      >
+    </ConfirmDialog>
+
+    <!-- Expire Now Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showExpireNowDialog"
+      title="Expire Node Now"
+      :loading="expiryLoading"
+      @ok="confirmExpireNow"
+    >
+      <template v-slot:item
+        ><p>
+          Are you sure you want to expire
+          <strong>{{ expiryMenuNode?.givenName }}</strong> immediately?
+        </p>
+        <p class="text-caption text-error mt-2">
+          This will cause the node to be disconnected from the network.
+        </p></template
+      >
+    </ConfirmDialog>
+
+    <!-- Set Expiry Time Dialog -->
+    <ConfirmDialog
+      v-model="showSetExpiryDialog"
+      title="Set Expiry Time"
+      :loading="expiryLoading"
+      @ok="confirmSetExpiry"
+    >
+      <template v-slot:item
+        ><p class="text-center mb-4">
+          Set a new expiry time for
+          <strong>{{ expiryMenuNode?.givenName }}</strong>
+        </p>
+        <v-date-picker
+          class="mx-auto"
+          v-model="newExpiryDate"
+          :min="new Date().toISOString().split('T')[0]"
+          :max="
+            new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0]
+          "
+          color="primary"
+          show-adjacent-months
+        ></v-date-picker>
+        <p class="text-caption text-grey mt-2 text-center">
+          Maximum expiry time is 6 months from now.
+        </p></template
+      >
+    </ConfirmDialog>
   </v-container>
 </template>

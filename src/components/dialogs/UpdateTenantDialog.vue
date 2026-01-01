@@ -59,6 +59,10 @@ function change() {
 }
 
 async function updateTenant() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
   const ret = await tryRequest(async () => {
     const t = props.tenant
     if (!t) {
@@ -106,10 +110,11 @@ async function updateTenant() {
   >
     <template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
-        <EmailInput v-model="email" @change="change"></EmailInput>
-        <PhoneInput v-model="phone" @change="change"></PhoneInput>
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
+        <EmailInput class="mt-2" v-model="email" @change="change"></EmailInput>
+        <PhoneInput class="mt-2" v-model="phone" @change="change"></PhoneInput>
         <v-text-field
+
           v-model="maxUserCount"
           label="Max User Count"
           type="number"
@@ -117,6 +122,7 @@ async function updateTenant() {
           @change="change"
         ></v-text-field>
         <v-text-field
+          class="mt-2"
           v-model="maxDeviceCount"
           label="Max Device Count"
           type="number"
@@ -124,6 +130,7 @@ async function updateTenant() {
           @change="change"
         ></v-text-field>
         <v-text-field
+          class="mt-2"
           v-model="maxDevicePerUser"
           label="Max Device Per User"
           type="number"

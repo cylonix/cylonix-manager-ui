@@ -8,13 +8,13 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 import { userAPI, tryRequest } from '@/plugins/api'
+import { User } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
-import RefreshButton from './buttons/RefreshButton.vue'
+import { shortTs } from '@/plugins/date'
 
 //import { formatDistance } from 'date-fns'
 
-//const store = useUserStore()
-const { isNetworkAdmin, isAdmin } = storeToRefs(useUserStore())
+const { isNetworkAdmin, isAdmin, isSysAdmin } = storeToRefs(useUserStore())
 
 // Stats
 const deviceStats = ref({
@@ -27,6 +27,8 @@ const userStats = ref({
   online: 0,
   offline: 0,
 })
+const multiUserNetworkCount = ref(0)
+const multiUserNetworkUsers = ref<User[]>([])
 
 const userPieChartItems = ref([
   { key: 'online', title: 'Online', value: 0, color: 'green' },
@@ -36,6 +38,16 @@ const devicePieChartItems = ref([
   { key: 'online', title: 'Online', value: 0, color: 'green' },
   { key: 'offline', title: 'Offline', value: 0, color: 'grey' },
 ])
+
+const multiUserNetworkHeaders = ref([
+  { title: 'Namespace', key: 'namespace' },
+  { title: 'User ID', key: 'userID' },
+  { title: 'Display Name', key: 'displayName' },
+  { title: 'Email', key: 'email' },
+  { title: 'Network', key: 'networkDomain' },
+  { title: 'Created At', key: 'createdAt', value: (item: any) => shortTs(item.createdAt) },
+  { title: 'Last Seen', key: 'lastSeen', value: (item: any) => shortTs(item.lastSeen) },
+] as const)
 
 // Loading states for refresh buttons
 const loadingUserStats = ref(false)
@@ -58,7 +70,21 @@ async function fetchDashboardData() {
 const alert = ref<Alert>({ on: false })
 async function fetchUserStats() {
   loadingUserStats.value = true
-  const ret = await tryRequest(async () => {
+  var ret = await tryRequest(async () => {
+    if (!isSysAdmin.value) {
+      return
+    }
+    const ret = await userAPI.getUserMultiUserNetworkSummary()
+    console.log('Multi-user network ret:', ret.data)
+    multiUserNetworkCount.value = ret.data.totalMultiUserNetworks ?? 0
+    multiUserNetworkUsers.value = ret.data.users ?? []
+  })
+  if (ret) {
+    alert.value = ret
+    loadingUserStats.value = false
+    return
+  }
+  ret = await tryRequest(async () => {
     const stats = await userAPI.getUserSummary()
     console.log('User stats:', stats)
     if (!stats || !stats.data || stats.data.length === 0) {
@@ -218,7 +244,12 @@ onUnmounted(() => {
         <v-card>
           <v-card-title class="text-h6">Total Users</v-card-title>
           <v-card-text>
-            <div class="text-h4">{{ userStats.total }}</div>
+          <v-row class="ma-1" justify="space-between" align="center">
+            <span class="text-h4">{{ userStats.total }}</span>
+            <span v-if="isSysAdmin" class="text-h6">
+              Multi-User Networks: {{ multiUserNetworkCount }}
+            </span>
+            </v-row>
           </v-card-text>
           <v-pie
             :items="userPieChartItems"
@@ -253,6 +284,19 @@ onUnmounted(() => {
     <v-row>
       <v-col cols="12">
         <AlarmTable></AlarmTable>
+      </v-col>
+    </v-row>
+    <v-row v-if="multiUserNetworkCount">
+    <v-col>
+      <p class="text-h6">Multi-User Network Users</p>
+      <v-data-table
+        :items="multiUserNetworkUsers"
+        :headers="multiUserNetworkHeaders"
+        :hide-default-footer="multiUserNetworkUsers.length <= 10"
+        class="mt-4"
+        dense
+        outlined
+      ></v-data-table>
       </v-col>
     </v-row>
 

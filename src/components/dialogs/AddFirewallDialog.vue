@@ -25,10 +25,20 @@ const loading = ref(false)
 const name = ref('')
 
 const ready = computed(() => {
-  return isFormValid.value
+  return (
+    isFormValid.value !== false &&
+    name.value &&
+    hostAddr.value &&
+    defaultInterface.value
+  )
 })
 
 async function add() {
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
+
   const ret = await tryRequest(async () => {
     loading.value = true
     const input = <FwConfig>{
@@ -66,7 +76,7 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <v-row>
           <v-col sm="12" lg="6">
             <NameInput v-model="name" label="Firewall name"></NameInput>
@@ -74,6 +84,7 @@ async function add() {
           <v-col sm="12" lg="6">
             <NameInput v-model="hostAddr" label="Host IP address"></NameInput>
             <NameInput
+              class="mt-2"
               v-model="defaultInterface"
               label="Default interface name"
             ></NameInput>

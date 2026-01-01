@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { decamelize } from '@cylonix/humps'
 import { V1PreAuthKey } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
@@ -106,6 +107,17 @@ async function loadItems(options: any) {
   }
   console.log('Loading pre-auth keys for user:', uID, options, props.forUserOnly)
 
+   let sortBy: string | undefined
+    let sortDesc: string | undefined
+    for (const [i, sort] of options.sortBy.entries()) {
+      if (i === 0) {
+        sortBy = decamelize(sort.key)
+        sortDesc = sort.order ?? ''
+      } else {
+        sortBy = sortBy + ',' + decamelize(sort.key)
+        sortDesc = sortDesc + ',' + (sort.order ?? '')
+      }
+    }
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListPreAuthKeys(
       isAdmin.value && !props.forUserOnly ? undefined : uID,
@@ -113,8 +125,8 @@ async function loadItems(options: any) {
       isSysAdmin.value && !props.forUserOnly ? undefined : namespace.value,
       undefined,
       undefined,
-      options.sortBy[0]?.key /* sortBy */,
-      options.sortBy[0]?.order == 'desc' ? true : false,
+      sortBy,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )

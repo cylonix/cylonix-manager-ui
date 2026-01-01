@@ -28,6 +28,12 @@ const ready = computed(() => {
 })
 
 async function add() {
+  // Validate form before proceeding
+  const { valid } = await form.value!.validate()
+  if (!valid) {
+    return
+  }
+
   const ret = await tryRequest(async () => {
     loading.value = true
     await supResourceAPI().postOriginWgResource(props.namespace, <
@@ -63,7 +69,7 @@ async function add() {
     @ok="add"
     ><template v-slot:item>
       <Alert v-model="alert"></Alert>
-      <v-form ref="form" v-model="isFormValid" auto-complete="on">
+      <v-form class="mt-2" ref="form" v-model="isFormValid" auto-complete="on">
         <v-chip-group
           v-model="popNames"
           selected-class="text-primary"

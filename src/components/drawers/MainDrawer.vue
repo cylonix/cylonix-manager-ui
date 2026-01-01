@@ -89,7 +89,6 @@ function updateRail() {
         </template>
         <v-list-item title="Admin users" to="/admin-users"></v-list-item>
         <v-list-item title="Users" to="/regular-users"></v-list-item>
-        <v-list-item title="All users" to="/users"></v-list-item>
       </v-list-group>
       <v-list-group v-if="isSysAdmin">
         <template v-slot:activator="{ props }">

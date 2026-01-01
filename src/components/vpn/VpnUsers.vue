@@ -55,7 +55,19 @@ const signInProvider = computed(() => {
   if (logins.length === 0) {
     return undefined
   }
-  return logins[0]?.provider
+  if (logins[0]?.provider) {
+    return logins[0]?.provider
+  }
+  return logins[0]?.loginType
+})
+
+const isCustomProvider = computed(() => {
+  const provider = signInProvider.value
+  if (!provider) {
+    return false
+  }
+  const publicProviders = ['google', 'apple', 'github']
+  return !publicProviders.includes(provider.toLowerCase())
 })
 
 const publicDomains = [
@@ -123,11 +135,18 @@ async function loadItems(options: any) {
     return
   }
 
-  const ret = await tryRequest(async () => {
-    var sortKey = options.sortBy[0]?.key
-    if (sortKey) {
-      sortKey = decamelize(sortKey)
+  let sortBy: string | undefined
+  let sortDesc: string | undefined
+  for (const [i, sort] of options.sortBy.entries()) {
+    if (i === 0) {
+      sortBy = decamelize(sort.key)
+      sortDesc = sort.order ?? ''
+    } else {
+      sortBy = sortBy + ',' + decamelize(sort.key)
+      sortDesc = sortDesc + ',' + (sort.order ?? '')
     }
+  }
+  const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListUsers(
       isAdmin.value || isNetworkAdmin ? undefined : uID,
       [],
@@ -135,8 +154,8 @@ async function loadItems(options: any) {
       isAdmin.value ? undefined : isNetworkAdmin ? network : undefined,
       undefined,
       undefined,
-      sortKey,
-      options.sortBy[0]?.order == 'desc' ? true : false,
+      sortBy,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )
@@ -242,7 +261,7 @@ function invitesSent() {
               icon="mdi-github"
               size="32"
             />
-            <p v-if="!signInProvider">Custom</p>
+            <p v-if="isCustomProvider">Custom</p>
           </div>
         </v-sheet>
       </v-col>

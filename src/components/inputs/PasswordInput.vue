@@ -24,7 +24,7 @@ const password = defineModel<string>()
 
 const passwordVisible = ref(false)
 const rules = ref([
-  (v: any) => !!v || 'Password is required',
+  (v: any) => !!v || 'This field is required',
   (v: any) =>
     (v && v.length >= 8) ||
     'Password length must be at least 8 characters long',
@@ -46,6 +46,10 @@ function onKeydown(e: KeyboardEvent) {
     emit('submit')
   }
 }
+function onChange() {
+  passwordTextField.value?.resetValidation()
+  emit('change')
+}
 
 </script>
 <template>
@@ -63,8 +67,9 @@ function onKeydown(e: KeyboardEvent) {
     :placeholder="placeholder"
     :rules="rules.concat(addRules as Array<any> || [])"
     :type="passwordVisible ? 'text' : 'password'"
+    validate-on="submit"
     @click:append-inner="passwordVisible = !passwordVisible"
-    @update:model-value="emit('change')"
+    @update:model-value="onChange"
     @keydown="onKeydown"
   ></v-text-field>
 </template>

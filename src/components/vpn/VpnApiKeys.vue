@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { decamelize } from '@cylonix/humps'
 import { V1ApiKey } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
@@ -93,6 +94,18 @@ async function loadItems(options: any) {
     uID = undefined
   }
 
+  let sortBy: string | undefined
+  let sortDesc: string | undefined
+  for (const [i, sort] of options.sortBy.entries()) {
+    if (i === 0) {
+      sortBy = decamelize(sort.key)
+      sortDesc = sort.order ?? ''
+    } else {
+      sortBy = sortBy + ',' + decamelize(sort.key)
+      sortDesc = sortDesc + ',' + (sort.order ?? '')
+    }
+  }
+
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListApiKeys(
       isAdmin.value ? undefined : uID,
@@ -101,8 +114,8 @@ async function loadItems(options: any) {
       undefined /* network */,
       undefined /* filterBy */,
       undefined /* filterValue */,
-      options.sortBy[0]?.key /* sortBy */,
-      options.sortBy[0]?.order == 'desc' ? true : false,
+      sortBy,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )

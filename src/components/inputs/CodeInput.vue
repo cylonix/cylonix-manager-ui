@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useDisplay } from 'vuetify'
 import type { Alert } from '@/plugins/alert'
 import { otpAPI, tryRequest } from '@/plugins/api'
@@ -12,11 +12,13 @@ import { otpAPI, tryRequest } from '@/plugins/api'
 const emit = defineEmits(['change', 'sent'])
 const code = defineModel<string>('code')
 const codeSent = defineModel<boolean>('codeSent')
+const canSendCode = defineModel<boolean>('canSendCode', { default: true })
 
 const alert = ref<Alert>({ on: false })
 const from = ref('')
 const loading = ref(false)
 const props = defineProps([
+  'class',
   'email',
   'phone',
   'sendDisabled',
@@ -25,7 +27,6 @@ const props = defineProps([
   'variant',
 ])
 
-const canSendCode = ref(true)
 const interval = ref()
 const timer = ref(0)
 
@@ -64,15 +65,20 @@ const checkCodeText = computed(() => {
 onBeforeUnmount(() => {
   clearInterval(interval.value)
 })
-onMounted(() => {
+
+function startTimer() {
+  timer.value = 60
   interval.value = setInterval(() => {
     timer.value -= 1
     if (timer.value <= 0) {
       canSendCode.value = true
-      timer.value = 60
+      if (alert.value.by === 'too-soon') {
+        alert.value = { on: false }
+      }
+      clearInterval(interval.value)
     }
   }, 1000)
-})
+}
 
 async function sendCode() {
   loading.value = true
@@ -80,17 +86,23 @@ async function sendCode() {
     const ret = await otpAPI.sendCode(props.phone, props.email)
     if (ret.data.sendAgainTooSoon) {
       alert.value = {
+        by: "too-soon",
         on: true,
-        text: 'Send again too soon!',
+        text: 'Send again too soon. Please wait...',
       }
     } else if (ret.data.from) {
       from.value = ret.data.from
       codeSent.value = true
       emit('sent')
+      alert.value = {on: false}
+    } else {
+      alert.value = {
+        on: true,
+        text: 'Failed to send code. Backend did not provide from address.',
+      }
     }
     canSendCode.value = false
-    timer.value = 30
-    alert.value = {on: false}
+    startTimer()
   })
   if (ret) {
     console.log('sendCode error', ret)
@@ -99,7 +111,7 @@ async function sendCode() {
   loading.value = false
 }
 </script>
-<template>
+<template :class="class">
   <Alert v-if="!code" v-model="alert"></Alert>
   <p v-if="codeSent && !code" align="center">{{ checkCodeText }}</p>
   <p v-if="code" align="center">
@@ -115,7 +127,7 @@ async function sendCode() {
     @update:model-value="emit('change')"
   ></v-otp-input>
   <v-row
-    v-if="codeSent && !code"
+    v-if="timer > 0 && !code"
     class="my-2 mx-2"
     :justify="codeSent ? 'end' : 'center'"
     align="center"
@@ -129,7 +141,7 @@ async function sendCode() {
       :width="4"
       >{{ timer }}
     </v-progress-circular>
-    <span>Didn't receive the code?</span>
+    <span v-if="codeSent">Didn't receive the code?</span>
     <v-btn
       v-if="!fullWidthSendButton"
       variant="text"
