@@ -131,7 +131,15 @@ defineExpose({
 })
 
 function confirmDeleteText(item: UserInvite): string {
-  return `Delete invite with ID "${item.id}" for "${item.emails}"?`
+  return (
+    `Delete invite with ID "${item.id}" for "${item.emails}"?` +
+    `${
+      item.shareNode
+        ? ` Node "${item.shareNodeName}" shared with this invite will also be invoked.`
+        : ''
+    }` +
+    ' This action cannot be undone.'
+  )
 }
 </script>
 <template>

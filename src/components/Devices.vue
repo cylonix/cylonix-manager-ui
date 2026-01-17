@@ -284,7 +284,9 @@ function clearFilters() {
         <v-btn color="primary" @click="applyFilters"> Filter </v-btn>
       </v-col>
       <v-col cols="12" md="2" align="end">
-        <v-btn variant="outlined" @click="clearFilters"> Clear Filters </v-btn>
+        <v-btn class="mx-2" variant="outlined" @click="clearFilters">
+          Clear Filters
+        </v-btn>
       </v-col>
     </v-row>
 

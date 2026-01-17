@@ -23,7 +23,7 @@ const goBack = () => {
   router.back()
 }
 const store = useUserStore()
-const { isAdmin, isNetworkAdmin } = storeToRefs(store)
+const { isAdmin, isNetworkAdmin, isSysAdmin } = storeToRefs(store)
 
 const alert = ref<Alert>({ on: false })
 
@@ -265,6 +265,11 @@ function openRenameDialog() {
   renameDialog.value = true
 }
 
+const showShareDialog = ref(false)
+function openShareDialog() {
+  showShareDialog.value = true
+}
+
 async function confirmRename() {
   const nodeID = nodeItem.value?.id
   if (!nodeID) {
@@ -310,6 +315,23 @@ async function confirmRename() {
   }
   renameLoading.value = false
 }
+function getIconForNode(node: V1Node) {
+  const os = node.hostinfo?.os ?? ''
+  switch (os.toLowerCase()) {
+    case 'windows':
+      return 'mdi-microsoft-windows'
+    case 'linux':
+      return 'mdi-linux'
+    case 'macos':
+      return 'mdi-apple'
+    case 'android':
+      return 'mdi-android'
+    case 'ios':
+      return 'mdi-apple'
+    default:
+      return 'mdi-laptop'
+  }
+}
 </script>
 <template>
   <v-container v-if="nodeItem">
@@ -330,7 +352,9 @@ async function confirmRename() {
           <v-card-title class="d-flex align-center">
             <v-row>
               <v-col cols="12" sm="8">
-                <v-icon class="mr-3" size="large">mdi-laptop</v-icon>
+                <v-icon class="mr-3" size="large">{{
+                  getIconForNode(nodeItem as V1Node)
+                }}</v-icon>
                 <div>
                   <div class="d-flex align-center flex-wrap">
                     <h2>{{ nodeItem.givenName }}</h2>
@@ -350,6 +374,11 @@ async function confirmRename() {
                 </div>
               </v-col>
               <v-col cols="12" sm="4" :align="smAndUp ? 'end' : undefined">
+                <ShareNodeButton
+                  v-if="!isSysAdmin"
+                  :item="nodeItem"
+                  @click="openShareDialog"
+                />
                 <v-chip
                   :color="nodeItem.online ? 'success' : 'error'"
                   size="large"
@@ -549,13 +578,30 @@ async function confirmRename() {
                   ></v-col
                 >
               </v-row>
-              <v-row class="field-row" v-if="nodeItem.capabilities">
+              <v-row
+                class="field-row"
+                v-if="nodeItem.shareToUsers && nodeItem.shareToUsers.length > 0"
+              >
+                <v-col cols="4" class="field-title">Shared To</v-col>
+                <v-col cols="8" class="field-value">
+                  <div
+                    v-for="user in nodeItem.shareToUsers"
+                    :key="user"
+                    class="font-monospace"
+                  >
+                    {{ user }}
+                  </div>
+                </v-col>
+              </v-row>
+              <v-row class="field-row">
                 <v-col cols="4" class="field-title">Capabilities</v-col>
                 <v-col cols="8" class="field-value">
-                  <AddButton
+                  <v-btn
+                    variant="tonal"
+                    density="compact"
                     @click="addCapability"
-                    label="Add Capability"
-                  ></AddButton>
+                    >Add Capability</v-btn
+                  >
                   <div
                     v-for="capability in nodeItem.capabilities"
                     :key="capability"
@@ -876,6 +922,7 @@ async function confirmRename() {
       </v-alert>
     </template>
   </ConfirmDialog>
+  <ShareNodeDialog v-model="showShareDialog" :node="nodeItem" />
 </template>
 <style scoped>
 .font-monospace {

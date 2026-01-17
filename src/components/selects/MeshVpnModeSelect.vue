@@ -11,9 +11,10 @@ const emit = defineEmits(['update:model-value'])
 <template>
   <v-select
     v-model="value"
+    density="compact"
+    prepend-inner-icon="mdi-shield-account"
     :items="[MeshVpnMode.Policy, MeshVpnMode.Single, MeshVpnMode.Tenant]"
     :label="'Select mesh vpn mode'"
-    chips
   >
     ></v-select
   >

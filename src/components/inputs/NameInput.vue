@@ -8,7 +8,14 @@ import { ref } from 'vue'
 
 const emit = defineEmits(['change'])
 const name = defineModel<string>()
-const props = defineProps(['autocomplete', 'label', 'required', 'min', 'max'])
+const props = defineProps([
+  'autocomplete',
+  'icon',
+  'label',
+  'required',
+  'min',
+  'max',
+])
 const rules = ref([
   (v: any) => !props.required || !!v || props.label + ' is required',
   (v: any) =>
@@ -33,6 +40,7 @@ const rules = ref([
     }"
     :label="label"
     :required="required"
+    :prepend-inner-icon="icon"
     @change="emit('change')"
   >
   </AbstractNameInput>

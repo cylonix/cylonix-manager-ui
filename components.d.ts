@@ -103,6 +103,8 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SendWelcomeEmailDialog: typeof import('./src/components/dialogs/SendWelcomeEmailDialog.vue')['default']
+    ShareNodeButton: typeof import('./src/components/buttons/ShareNodeButton.vue')['default']
+    ShareNodeDialog: typeof import('./src/components/dialogs/ShareNodeDialog.vue')['default']
     ShortenTextChip: typeof import('./src/components/chips/ShortenTextChip.vue')['default']
     SignUp: typeof import('./src/components/SignUp.vue')['default']
     SupervisorFwConfigs: typeof import('./src/components/supervisor/SupervisorFwConfigs.vue')['default']

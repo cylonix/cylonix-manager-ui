@@ -18,6 +18,7 @@ const value = defineModel<any>()
     :label="title ?? 'Select roles'"
     :loading="loading"
     density="compact"
+    prepend-inner-icon="mdi-account-group"
     chips
     multiple
     :rules="[(v) => !required || !!(v && v.length) || 'Role is required']"

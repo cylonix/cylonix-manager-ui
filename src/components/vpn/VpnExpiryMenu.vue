@@ -8,6 +8,7 @@ import { formatExpiry } from '@/plugins/date'
 defineProps<{
   expiry: string | undefined
   withPrefix?: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits([
   'set',
@@ -28,7 +29,7 @@ function expiryState(expiry: string | undefined): string {
 
 </script>
 <template v - slot: item.expiry = "{ item }" >
-  <v-menu>
+  <v-menu :disabled="disabled">
     <template v-slot:activator="{ props }">
       <v-chip
         v-bind="props"

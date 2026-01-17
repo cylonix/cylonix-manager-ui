@@ -31,9 +31,12 @@ async function loginWithApple() {
       undefined,
       getEnv('VITE_LOGIN_REDIRECT_BASE_URL') +
         '/' +
-        (props.sessionID ?? (props.redirect
-          ? `?redirect=${encodeURIComponent(props.redirect ?? '')}`
-          : ''))
+        (props.sessionID ??
+          (props.redirect
+            ? `?redirect=${encodeURIComponent(props.redirect ?? '')}`
+            : props.inviteCode
+            ? `?inviteCode=${encodeURIComponent(props.inviteCode ?? '')}`
+            : ''))
     )
     if (ret.data.encodedRedirectURL) {
       window.location.href = ret.data.encodedRedirectURL ?? ''

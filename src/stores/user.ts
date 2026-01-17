@@ -3,7 +3,7 @@
 
 import { computed, ref } from "vue"
 import { defineStore } from "pinia"
-import { LoginConfirmSession, Tenant, User } from "@/clients/manager/api"
+import { LoginConfirmSession, PredefinedRoles, Tenant, User } from "@/clients/manager/api"
 
 export const useUserStore = defineStore(
   "user",
@@ -16,10 +16,10 @@ export const useUserStore = defineStore(
     const updatedAt = ref(0)
     const ttl = 7 * 24 * 3600 // 7 days in seconds
     const isNetworkAdmin = computed(() => {
-      return user.value?.roles?.includes('network-admin') && adminContext.value
+      return user.value?.roles?.includes(PredefinedRoles.NetworkAdmin) && adminContext.value
     })
     const isNetworkOwner = computed(() => {
-      return user.value?.roles?.includes('network-owner') && adminContext.value
+      return user.value?.roles?.includes(PredefinedRoles.NetworkOwner) && adminContext.value
     })
     const isAdmin = computed(() => {
       return user.value?.isAdmin && adminContext.value
@@ -52,7 +52,9 @@ export const useUserStore = defineStore(
       }
     }
     function $reset() {
+      adminContext.value = true
       apiKey.value = ''
+      loginConfirmSession.value = undefined
       tenant.value = undefined
       user.value = undefined
       updatedAt.value = 0

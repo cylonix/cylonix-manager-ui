@@ -7,6 +7,7 @@ import { newToast } from '@/plugins/toast'
 
 const props = defineProps<{
   modelValue: boolean
+  shareNode?: number
 }>()
 
 const emit = defineEmits(['update:modelValue', 'invited'])
@@ -50,6 +51,7 @@ async function generateInviteLink() {
       emails: emailList.value,
       sendEmail: false,
       internalUser: false,
+      shareNode: props.shareNode ?? 0,
       role: role.value,
     })
     inviteLink.value = resp.data
@@ -71,6 +73,7 @@ async function sendInvites() {
       emails: emailList.value,
       sendEmail: true,
       internalUser: false,
+      shareNode: props.shareNode ?? 0,
       role: role.value,
     })
     emit('invited')

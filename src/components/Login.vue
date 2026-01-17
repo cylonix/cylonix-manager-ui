@@ -12,6 +12,7 @@ import { AdditionalAuthInfo, LoginType, MfaType } from '@/clients/manager/api'
 import { UnauthorizedError, loginAPI } from '@/plugins/api'
 import type { Alert } from '@/plugins/alert'
 import { useLoginStore } from '@/stores/login'
+import { useNodesStore } from '@/stores/nodes'
 import { useUserStore } from '@/stores/user'
 import getEnv from '@/utils/env'
 import { AxiosError } from 'axios'
@@ -106,6 +107,7 @@ watch(
 )
 const router = useRouter()
 const userStore = useUserStore()
+const nodesStore = useNodesStore()
 const loginStore = useLoginStore()
 
 const mfaNeeded = ref<MfaType[]>([])
@@ -155,6 +157,8 @@ async function submit() {
           (props.sessionID ??
             (props.redirect
               ? `?redirect=${encodeURIComponent(props.redirect ?? '')}`
+              : props.inviteCode
+              ? `?inviteCode=${encodeURIComponent(props.inviteCode ?? '')}`
               : ''))
       )
       if (ret.data.isDirectLoginWithPassword) {
@@ -219,12 +223,19 @@ async function submit() {
       router.push('/confirm-session')
       return
     }
-    console.log('redirecting to', props.redirect ?? '/')
+    console.log('redirect', props.redirect, "inviteCode", props.inviteCode)
     if (props.redirect) {
+      console.log('redirecting to', props.redirect)
       router.push(props.redirect)
       return
     }
-    router.push('/')
+    const inviteCode = props.inviteCode
+    if (inviteCode) {
+      console.log('redirecting to /?inviteCode=' + encodeURIComponent(inviteCode))
+      router.push('/?inviteCode=' + encodeURIComponent(inviteCode))
+    } else {
+      router.push('/')
+    }
   } catch (e: any) {
     console.log('login error', e)
     if (e instanceof UnauthorizedError) {
@@ -319,6 +330,7 @@ function reset() {
 onMounted(() => {
   // Reset user store state when login component mounts
   userStore.$reset()
+  nodesStore.$reset()
 })
 </script>
 

@@ -24,7 +24,7 @@ const rules = ref([
       rules: rules,
       prependInnerIcon: 'mdi-account-outline',
     }"
-    label="Username"
+    label="Username *"
     required
     @change="emit('change')"
   >

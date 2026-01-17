@@ -35,6 +35,8 @@ async function loginWithGoogle() {
         (props.sessionID ??
           (props.redirect
             ? `?redirect=${encodeURIComponent(props.redirect ?? '')}`
+              : props.inviteCode
+              ? `?inviteCode=${encodeURIComponent(props.inviteCode ?? '')}`
             : ''))
     )
     if (ret.data.encodedRedirectURL) {

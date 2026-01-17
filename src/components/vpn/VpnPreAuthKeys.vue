@@ -15,11 +15,11 @@ import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
-  forUserOnly: boolean
+  forUserOnly?: boolean
 }>()
 const headers = ref([
   { title: 'Key', key: 'key', align: 'center' },
-  { title: "Description", key: 'description'},
+  { title: 'Description', key: 'description' },
   { title: 'Reusable', key: 'reusable' },
   { title: 'Ephemeral', key: 'ephemeral' },
   { title: 'Used', key: 'used' },
@@ -27,7 +27,6 @@ const headers = ref([
   {
     title: 'Expiration',
     key: 'expiration',
-    value: (item: any) => shortTs(item.expiration),
   },
   {
     title: 'Created',
@@ -38,7 +37,15 @@ const headers = ref([
 ] as const)
 
 const adminHeaders = ref([
-  { title: 'User', key: 'user' },
+  {
+    title: 'User',
+    key: 'user',
+    value: (item: any) => item.userDetail.loginName,
+  },
+  {
+    title: 'ID',
+    key: 'id',
+  },
   ...headers.value,
 ] as const)
 
@@ -47,9 +54,8 @@ const sysAdminHeaders = ref([
   ...adminHeaders.value,
 ] as const)
 
-
 const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(20)
 const loading = ref(false)
 const loadOptions = ref()
 const note = ref('')
@@ -57,8 +63,22 @@ const search = ref('')
 const serverItems = ref<V1PreAuthKey[]>()
 const totalItems = ref(0)
 
+// Filter state
+const filterEnterpriseID = ref()
+const filterUser = ref()
+
+// Expiry management
+const expiryMenuKey = ref<V1PreAuthKey | null>(null)
+const showDisableExpiryDialog = ref(false)
+const showExpireNowDialog = ref(false)
+const showSetExpiryDialog = ref(false)
+const newExpiryDate = ref<Date | null>(null)
+const expiryLoading = ref(false)
+
 const store = useUserStore()
-const { isAdmin, namespace, isSysAdmin, user } = storeToRefs(store)
+const { isAdmin, isNetworkAdmin, isSysAdmin, namespace, user } = storeToRefs(
+  store
+)
 
 const computedHeaders = computed(() => {
   if (props.forUserOnly) {
@@ -77,9 +97,7 @@ async function deleteItem(item: V1PreAuthKey) {
     if (!item.id) {
       return
     }
-    await vpnAPI.headscaleServiceDeletePreAuthKey(
-      item.id,
-    )
+    await vpnAPI.headscaleServiceDeletePreAuthKey(item.id)
     await loadItems(loadOptions.value)
     newToast({
       on: true,
@@ -102,29 +120,40 @@ async function loadItems(options: any) {
     alert.value = {
       on: true,
       text: 'Missing user ID.',
+      by: 'loadItems',
     }
     return
   }
-  console.log('Loading pre-auth keys for user:', uID, options, props.forUserOnly)
+  console.log(
+    'Loading pre-auth keys for user:',
+    uID,
+    options,
+    props.forUserOnly
+  )
 
-   let sortBy: string | undefined
-    let sortDesc: string | undefined
-    for (const [i, sort] of options.sortBy.entries()) {
-      if (i === 0) {
-        sortBy = decamelize(sort.key)
-        sortDesc = sort.order ?? ''
-      } else {
-        sortBy = sortBy + ',' + decamelize(sort.key)
-        sortDesc = sortDesc + ',' + (sort.order ?? '')
-      }
+  var forNamespace = namespace.value
+  if (isSysAdmin.value) {
+    forNamespace = filterEnterpriseID.value
+  }
+
+  let sortBy: string | undefined
+  let sortDesc: string | undefined
+  for (const [i, sort] of options.sortBy.entries()) {
+    if (i === 0) {
+      sortBy = decamelize(sort.key)
+      sortDesc = sort.order ?? ''
+    } else {
+      sortBy = sortBy + ',' + decamelize(sort.key)
+      sortDesc = sortDesc + ',' + (sort.order ?? '')
     }
+  }
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListPreAuthKeys(
       isAdmin.value && !props.forUserOnly ? undefined : uID,
       [],
-      isSysAdmin.value && !props.forUserOnly ? undefined : namespace.value,
-      undefined,
-      undefined,
+      isSysAdmin.value && !props.forUserOnly ? forNamespace : namespace.value,
+      filterUser.value ? 'username' : undefined,
+      filterUser.value,
       sortBy,
       sortDesc,
       options.page,
@@ -135,7 +164,12 @@ async function loadItems(options: any) {
     console.log('pre-auth-keys:', serverItems.value, ret?.data)
   })
   if (ret) {
+    ret.by = 'loadItems'
     alert.value = ret
+  } else {
+    if (alert.value && alert.value.by === 'loadItems') {
+      alert.value = { on: false }
+    }
   }
   console.log('Done loading items.')
   loading.value = false
@@ -145,18 +179,168 @@ function confirmDeleteText(item: V1PreAuthKey): string {
   return `Delete api key with ID "${item.id}" for "${item.user}"?`
 }
 
+function applyFilters() {
+  loadItems(loadOptions.value)
+}
+
+function clearFilters() {
+  filterEnterpriseID.value = undefined
+  filterUser.value = undefined
+  loadItems(loadOptions.value)
+}
+
+// Expiry management functions
+function openExpiryMenu(item: V1PreAuthKey, option: 'disable' | 'set' | 'now') {
+  expiryMenuKey.value = item
+  if (option === 'disable') {
+    showDisableExpiryDialog.value = true
+  } else if (option === 'set') {
+    // Set default to 6 months from now
+    const sixMonthsLater = new Date()
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+    newExpiryDate.value = sixMonthsLater
+    showSetExpiryDialog.value = true
+  } else if (option === 'now') {
+    showExpireNowDialog.value = true
+  }
+}
+
+async function confirmDisableExpiry() {
+  if (!expiryMenuKey.value?.key) return
+
+  expiryLoading.value = true
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceExpirePreAuthKey({
+      id: expiryMenuKey.value!.id,
+      expiry: '0001-01-01T00:00:00Z', // Zero timestamp to disable expiry
+    })
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully disabled expiry for pre-auth key`,
+    })
+    showDisableExpiryDialog.value = false
+    await loadItems(loadOptions.value)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  expiryLoading.value = false
+}
+
+async function confirmExpireNow() {
+  if (!expiryMenuKey.value?.key) return
+
+  expiryLoading.value = true
+  const ret = await tryRequest(async () => {
+    // Set expiry to current time to expire immediately
+    await vpnAPI.headscaleServiceExpirePreAuthKey({
+      id: expiryMenuKey.value!.id,
+      expiry: new Date().toISOString(),
+    })
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully expired pre-auth key`,
+    })
+    showExpireNowDialog.value = false
+    await loadItems(loadOptions.value)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  expiryLoading.value = false
+}
+
+async function confirmSetExpiry() {
+  if (!expiryMenuKey.value?.key || !newExpiryDate.value) return
+
+  // Validate the date is not more than 6 months in the future
+  const maxDate = new Date()
+  maxDate.setMonth(maxDate.getMonth() + 6)
+
+  if (newExpiryDate.value > maxDate) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: 'Invalid date',
+      text: 'Expiry date cannot be more than 6 months in the future',
+    }
+    return
+  }
+
+  // Validate the date is in the future
+  if (newExpiryDate.value <= new Date()) {
+    alert.value = {
+      on: true,
+      type: 'error',
+      title: 'Invalid date',
+      text: 'Expiry date must be in the future',
+    }
+    return
+  }
+
+  expiryLoading.value = true
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceExpirePreAuthKey({
+      id: expiryMenuKey.value!.id,
+      expiry: newExpiryDate.value!.toISOString(),
+    })
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully set expiry for pre-auth key to ${newExpiryDate.value!.toLocaleDateString()}`,
+    })
+    showSetExpiryDialog.value = false
+    await loadItems(loadOptions.value)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  expiryLoading.value = false
+}
+
 defineExpose({
   loadItems,
-  loadOptions: computed(() => loadOptions.value)
+  loadOptions: computed(() => loadOptions.value),
 })
 </script>
 <template>
   <v-container>
     <Alert v-model="alert"></Alert>
     <v-row class="mx-2 my-1" align="center" justify="space-between">
-      <v-chip size="large">Pre-auth Keys</v-chip>
+      <v-chip class="mx-2" size="large">Pre-auth Keys</v-chip>
       <RefreshButton @refresh="loadItems(loadOptions)" />
     </v-row>
+
+    <!-- Filter Row -->
+    <v-row class="mx-2 mt-4 mb-2" align="start" justify="space-between">
+      <v-col cols="12" md="3" v-if="isSysAdmin">
+        <v-text-field
+          v-model="filterEnterpriseID"
+          label="Filter by Enterprise ID"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="3" v-if="isAdmin || isNetworkAdmin">
+        <v-text-field
+          v-model="filterUser"
+          label="Filter by User"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-btn color="primary" @click="applyFilters"> Filter </v-btn>
+      </v-col>
+      <v-col cols="12" md="2" align="end">
+        <v-btn class="mx-2" variant="outlined" @click="clearFilters">
+          Clear Filters
+        </v-btn>
+      </v-col>
+    </v-row>
+
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
@@ -171,6 +355,29 @@ defineExpose({
       <template v-slot:item.key="{ item }">
         <ShortenTextChip :text="item.key ?? ''"></ShortenTextChip>
       </template>
+      <template v-slot:item.ephemeral="{ item }">
+        <v-icon v-if="item.ephemeral" color="purple">mdi-check</v-icon>
+      </template>
+      <template v-slot:item.reusable="{ item }">
+        <v-icon v-if="item.reusable" color="purple">mdi-check</v-icon>
+      </template>
+      <template v-slot:item.used="{ item }">
+        <v-icon v-if="item.used" color="purple">mdi-check</v-icon>
+      </template>
+      <template v-slot:item.aclTags="{ item }">
+        <span v-if="item.aclTags && item.aclTags.length > 0">{{
+          item.aclTags
+        }}</span>
+      </template>
+
+      <template v-slot:item.expiration="{ item }">
+        <VpnExpiryMenu
+          :expiry="item.expiration"
+          @set="openExpiryMenu(item, 'set')"
+          @disable="openExpiryMenu(item, 'disable')"
+          @now="openExpiryMenu(item, 'now')"
+        />
+      </template>
       <template v-slot:item.actions="{ item }">
         <DeleteButton
           v-model:note="note"
@@ -180,5 +387,64 @@ defineExpose({
         </DeleteButton>
       </template>
     </v-data-table-server>
+
+    <!-- Disable Expiry Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showDisableExpiryDialog"
+      title="Disable Expiry"
+      :loading="expiryLoading"
+      @ok="confirmDisableExpiry"
+    >
+      <template v-slot:item>
+        <p>Are you sure you want to disable expiry for this pre-auth key?</p>
+        <p class="text-caption text-grey mt-2">
+          This will set the key to never expire.
+        </p>
+      </template>
+    </ConfirmDialog>
+
+    <!-- Expire Now Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showExpireNowDialog"
+      title="Expire Pre-Auth Key Now"
+      :loading="expiryLoading"
+      @ok="confirmExpireNow"
+    >
+      <template v-slot:item>
+        <p>Are you sure you want to expire this pre-auth key immediately?</p>
+        <p class="text-caption text-error mt-2">
+          This will cause the key to become invalid and unusable.
+        </p>
+      </template>
+    </ConfirmDialog>
+
+    <!-- Set Expiry Time Dialog -->
+    <ConfirmDialog
+      v-model="showSetExpiryDialog"
+      title="Set Expiry Time"
+      :loading="expiryLoading"
+      @ok="confirmSetExpiry"
+    >
+      <template v-slot:item>
+        <p class="text-center mb-4">
+          Set a new expiry time for this pre-auth key
+        </p>
+        <v-date-picker
+          class="mx-auto"
+          v-model="newExpiryDate"
+          :min="new Date().toISOString().split('T')[0]"
+          :max="
+            new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0]
+          "
+          color="primary"
+          show-adjacent-months
+        ></v-date-picker>
+        <p class="text-caption text-grey mt-2 text-center">
+          Maximum expiry time is 6 months from now.
+        </p>
+      </template>
+    </ConfirmDialog>
   </v-container>
 </template>

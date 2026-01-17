@@ -70,9 +70,11 @@ const routes = [
   { path: '/labels', component: Labels, meta: { requiresAuth: true } },
   {
     path: '/login/:sessionID?',
-    name: 'login',
     component: Login,
-    props: true // Passing route params as props
+    props: (route: any) => ({
+      sessionID: route.params.sessionID,
+      redirect: route.query.redirect,
+    })
   },
   {
     path: '/invite',
@@ -106,6 +108,7 @@ const routes = [
     props: (route: any) => ({
       sessionID: route.params.sessionID,
       redirect: route.query.redirect,
+      inviteCode: route.query.inviteCode,
     })
   },
   { path: '/policies', component: Policies, meta: { requiresAuth: true } },
@@ -195,9 +198,10 @@ router.beforeEach((to, from) => {
     }
   }
   if (to.path == '/' && !store.isAdmin) {
+    console.log("setting query to ", to.query)
     return {
       path: '/ui/vpn-nodes',
-      query: { redirect: to.fullPath }
+      query: to.query
     }
   }
   return true

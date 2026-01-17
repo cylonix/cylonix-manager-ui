@@ -19,6 +19,7 @@ const loginStore = useLoginStore()
 interface Props {
   sessionID?: string
   redirect?: string
+  inviteCode?: string
 }
 const props = defineProps<Props>()
 
@@ -65,7 +66,14 @@ onMounted(async () => {
             router.push(decodeURIComponent(props.redirect))
             return
           }
-          router.push('/')
+          const inviteCode = props.inviteCode
+          if (inviteCode) {
+            console.log('redirecting to home with invite code', inviteCode)
+            router.push(`/?inviteCode=${inviteCode}`)
+          } else {
+            console.log('redirecting to home')
+            router.push('/')
+          }
         }
       })
     })

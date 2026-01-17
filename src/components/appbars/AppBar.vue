@@ -131,7 +131,6 @@ setInterval(async () => {
     <v-menu
       v-if="loggedIn"
       v-model="userMenuOpen"
-      :close-on-content-click="false"
     >
       <template v-slot:activator="{ props }">
         <v-btn icon v-bind="props">
@@ -175,7 +174,7 @@ setInterval(async () => {
         <v-divider></v-divider>
 
         <v-list>
-          <LogoutButton asMenuItem></LogoutButton>
+          <LogoutButton asMenuItem v-model:menuOpen="userMenuOpen"></LogoutButton>
         </v-list>
       </v-card>
     </v-menu>

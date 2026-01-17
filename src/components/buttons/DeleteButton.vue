@@ -34,8 +34,11 @@ function okDelete() {
     <span>Delete</span>
   </v-tooltip>
   <ConfirmDialog
+    max-width="600"
     v-model="deleteDialog"
     :okDisabled="okDeleteDisabled"
+    okColor="error"
+    okText="Delete"
     :text="confirmDeleteText ?? 'Delete this request'"
     :title="title"
     @ok="okDelete"

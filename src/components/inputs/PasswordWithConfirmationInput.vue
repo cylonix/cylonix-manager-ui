@@ -19,8 +19,8 @@ const label = ref()
 
 watchEffect(() => {
   const n = props.newPassword
-  confirmLabel.value = n ? 'Confirm new password' : 'Confirm password'
-  label.value = n ? 'New password' : 'Password'
+  confirmLabel.value = n ? 'Confirm new password *' : 'Confirm password'
+  label.value = n ? 'New password *' : 'Password'
 })
 
 function checkConfirmPasswordMatch(v: any) {
@@ -32,8 +32,13 @@ function changePassword() {
   confirmPasswordInput.value.validate()
 }
 </script>
-<template :class="class">
-  <PasswordInput v-model="password" :label="label" @change="changePassword" />
+<template>
+  <PasswordInput
+    :class="class"
+    v-model="password"
+    :label="label"
+    @change="changePassword"
+  />
   <PasswordInput
     class="mt-2"
     v-model="confirmPassword"
