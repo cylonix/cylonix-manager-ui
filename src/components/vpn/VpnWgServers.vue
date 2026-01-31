@@ -170,6 +170,8 @@ async function loadClientItems(options: any) {
       [],
       true,
       undefined,
+      undefined,
+      undefined,
       options.page,
       options.itemsPerPage
     )

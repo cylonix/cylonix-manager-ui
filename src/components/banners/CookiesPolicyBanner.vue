@@ -45,7 +45,7 @@ function saveAndAccept() {
       </template>
 
       <template v-slot:actions>
-        <v-row justify="end">
+        <v-row class="me-4 mb-4" justify="end">
           <v-dialog v-model="dialog" max-width="500">
             <template v-slot:activator="{ props }">
               <v-btn

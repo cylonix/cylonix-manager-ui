@@ -1,12 +1,17 @@
 {
     "cSpell.words": [
+        "authelia",
+        "authentik",
         "autogroup",
         "autogroups",
         "axios",
         "Bvi",
         "bvis",
+        "codeberg",
         "decamelize",
         "derp",
+        "foxids",
+        "Gitea",
         "headscale",
         "iconsets",
         "imac",
@@ -17,7 +22,9 @@
         "nodekey",
         "nonroot",
         "pinia",
+        "Qrcode",
         "subsys",
-        "VITE"
+        "VITE",
+        "zitadel"
     ]
 }

@@ -41,7 +41,6 @@ const { loggedIn } = storeToRefs(store)
 // Watch for screen size changes
 watch(lgAndUp, (isLarge) => {
   drawer.value = isLarge && loggedIn.value
-  console.log("loggedIn.value", loggedIn.value, "drawer", drawer.value, "isLarge", isLarge)
 })
 
 watch(loggedIn, (newValue) => {

@@ -28,7 +28,7 @@ const props = defineProps<{
 }>()
 
 const rules = ref([
-  (v: any) => props.required || !!v || `${props.label} is required.`,
+  (v: any) => !props.required || !!v || `${props.label} is required.`,
   (v: any) => {
     const min = props.min ?? 2
     const max = props.max ?? 30

@@ -41,6 +41,11 @@ const canLogin = computed(() => {
   )
 })
 
+const fullURL = computed(() => {
+  console.log('Full URL:', window.location.origin + route.fullPath)
+  return window.location.origin + route.fullPath
+})
+
 const showSubmitButton = computed(() => {
   return (
     ((loginType.value != LoginType.Phone && username.value) ||
@@ -223,7 +228,7 @@ async function submit() {
       router.push('/confirm-session')
       return
     }
-    console.log('redirect', props.redirect, "inviteCode", props.inviteCode)
+    console.log('redirect', props.redirect, 'inviteCode', props.inviteCode)
     if (props.redirect) {
       console.log('redirecting to', props.redirect)
       router.push(props.redirect)
@@ -231,7 +236,9 @@ async function submit() {
     }
     const inviteCode = props.inviteCode
     if (inviteCode) {
-      console.log('redirecting to /?inviteCode=' + encodeURIComponent(inviteCode))
+      console.log(
+        'redirecting to /?inviteCode=' + encodeURIComponent(inviteCode)
+      )
       router.push('/?inviteCode=' + encodeURIComponent(inviteCode))
     } else {
       router.push('/')
@@ -325,6 +332,10 @@ function reset() {
   username.value = undefined
   password.value = undefined
   loginType.value = undefined
+}
+
+function qrCodeSignIn() {
+  router.push('/qr-code-sign-in/' + encodeURIComponent(fullURL.value))
 }
 
 onMounted(() => {
@@ -436,17 +447,36 @@ onMounted(() => {
         :redirect="redirect"
         v-model:alert="alert"
       />
+      <AddCustomAuthButton
+        v-if="!sessionID"
+        :sessionID="sessionID"
+        :inviteCode="inviteCode"
+        :redirect="redirect"
+        v-model:alert="alert"
+      />
+      <v-row justify="center" align="center">
+        <v-chip
+          class="my-4"
+          density="compact"
+          v-if="sessionID"
+          :url="fullURL"
+          color="primary"
+          variant="text"
+          @click="qrCodeSignIn"
+          >Or use a QR Code</v-chip
+        ></v-row
+      >
       <v-row justify="center">
         <v-col cols="12">
-          <p class="my-2 text-body-2 text-center d-block">
+          <p class="my-2 text-body-2 text-center d-block text-grey-darken-1">
             Sign in for first time user will sign up automatically
           </p>
         </v-col>
       </v-row>
       <v-row class="mt-2" justify="center">
         <v-col cols="12">
-          <p class="text-body-2 text-center d-block">
-            First time user?
+          <p class="text-body-2 text-center d-block text-grey-darken-1">
+            First time user? Learn more at
             <a
               variant="text"
               density="compact"
@@ -454,10 +484,10 @@ onMounted(() => {
               target="_blank"
               class="text-decoration-none px-1"
             >
-              Learn more at {{ companyWebsite }}
+              {{ companyWebsite }}
             </a>
           </p>
-          <p class="text-body-2 text-center d-block">
+          <p class="text-body-2 text-center d-block text-grey-darken-1">
             Need help or sign up for your company? Contact
             <a
               variant="text"

@@ -37,6 +37,10 @@ export function shortUUID(uuid: string | undefined): string | undefined {
   return uuid?.substring(0, 18) + '...'
 }
 
+export function shortString(s: string | undefined, length = 12): string | undefined {
+  return s?.length && s.length > length ? s.substring(0, length) + '...' : s
+}
+
 export function parseKeyValueString(input: string): Record<string, string> {
   const result: Record<string, string> = {};
   let currentKey = '';
@@ -122,4 +126,16 @@ export function hexToBase64(hexString: string, fullString = false): string {
 
   // Convert to base64
   return btoa(String.fromCharCode(...bytes))
+}
+
+export function base64ToHex(base64: string): string {
+  // Remove whitespace
+  base64 = base64.replace(/\s+/g, '');
+
+  // Trim to last complete group of 4
+  base64 = base64.slice(0, base64.length - (base64.length % 4));
+
+  // Decode and convert to hex
+  const bytes = atob(base64);
+  return Array.from(bytes).map(b => b.charCodeAt(0).toString(16).padStart(2, '0')).join('');
 }

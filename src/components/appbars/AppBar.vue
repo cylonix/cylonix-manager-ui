@@ -33,7 +33,12 @@ const userMenuOpen = ref(false)
 const changePasswordDialog = ref(false)
 
 const isLoginRoute = computed(() => {
-  return route.path == '/login'
+  const p = route.path
+  return (
+    p.startsWith('/login') ||
+    p.startsWith('/qr-code-sign-in') ||
+    p.startsWith('/add-custom-auth')
+  )
 })
 
 const userAvatar = computed(() => {
@@ -107,6 +112,7 @@ setInterval(async () => {
       location="top center"
       :color="toast.color"
       :text="toast.text"
+      :timeout="toast.timeout"
       close-on-content-click
     ></v-snackbar>
     <ToggleThemeButton></ToggleThemeButton>
@@ -128,10 +134,7 @@ setInterval(async () => {
     </v-tooltip>
 
     <!-- User Profile Menu -->
-    <v-menu
-      v-if="loggedIn"
-      v-model="userMenuOpen"
-    >
+    <v-menu v-if="loggedIn" v-model="userMenuOpen">
       <template v-slot:activator="{ props }">
         <v-btn icon v-bind="props">
           <v-avatar :color="userAvatar ? undefined : 'primary'" size="40">
@@ -174,7 +177,10 @@ setInterval(async () => {
         <v-divider></v-divider>
 
         <v-list>
-          <LogoutButton asMenuItem v-model:menuOpen="userMenuOpen"></LogoutButton>
+          <LogoutButton
+            asMenuItem
+            v-model:menuOpen="userMenuOpen"
+          ></LogoutButton>
         </v-list>
       </v-card>
     </v-menu>

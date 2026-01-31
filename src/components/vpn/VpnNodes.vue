@@ -16,7 +16,7 @@ import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI, vpnAPI, parseNodeHealth } from '@/plugins/api'
 import { formatExpiry, shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
-import { hexToBase64 } from '@/plugins/utils'
+import { hexToBase64, base64ToHex } from '@/plugins/utils'
 import { useUserStore } from '@/stores/user'
 import { useNodesStore } from '@/stores/nodes'
 
@@ -105,7 +105,6 @@ const adminViewHeaders = [
       }
     },
   },
-  { title: 'Name', key: 'name' },
   { title: 'Given Name', key: 'givenName' },
   {
     title: 'Created at',
@@ -243,6 +242,7 @@ const filterEnterpriseID = ref()
 const filterUser = ref()
 const filterGivenName = ref()
 const filterOnlineOnly = ref()
+const filterNodeKey = ref()
 
 // Tab state for regular vs shared nodes
 const currentTab = ref<'my-nodes' | 'shared-nodes'>('my-nodes')
@@ -459,6 +459,12 @@ async function loadItems(options: any, forceRefresh = false) {
         sortBy = 'last_seen'
       } else if (sortBy === 'name') {
         sortBy = 'given_name'
+      } else if (sortBy === "ip_addresses") {
+        sortBy = "ipv4"
+      } else if (sortBy === "pre_auth_key") {
+        sortBy = "auth_key_id"
+      } else if (sortBy === "register_with") {
+        sortBy = "register_method"
       }
       sortDesc = sort.order ?? ''
     } else {
@@ -477,6 +483,17 @@ async function loadItems(options: any, forceRefresh = false) {
   if (filterGivenName.value) {
     filterFields.push('given_name')
     filterValues.push(filterGivenName.value)
+  }
+  if (filterNodeKey.value) {
+    filterFields.push('node_key')
+    var key = filterNodeKey.value
+    if (key.startsWith('0x')) {
+      key = key.substring(2)
+    } else {
+      // Assume base64 input, convert to hex
+      key = base64ToHex(key)
+    }
+    filterValues.push(key)
   }
 
   const ret = await tryRequest(async () => {
@@ -837,7 +854,7 @@ async function handleRejectSharedNode(item: V1Node) {
 
     <!-- Filter Row -->
     <v-row class="mx-2 mt-4 mb-2" align="start" justify="space-between">
-      <v-col cols="12" lg="2" v-if="isSysAdmin">
+      <v-col cols="12" md="3" v-if="isSysAdmin">
         <v-text-field
           v-model="filterEnterpriseID"
           label="Filter by Enterprise ID"
@@ -847,7 +864,7 @@ async function handleRejectSharedNode(item: V1Node) {
       </v-col>
       <v-col
         cols="12"
-        lg="2"
+        md="3"
         v-if="isAdmin || (isNetworkAdmin && allUsers.length > 1)"
       >
         <v-text-field
@@ -857,7 +874,7 @@ async function handleRejectSharedNode(item: V1Node) {
           density="compact"
         />
       </v-col>
-      <v-col cols="12" lg="2">
+      <v-col cols="12" md="3">
         <v-text-field
           v-model="filterGivenName"
           label="Filter by Name"
@@ -865,7 +882,16 @@ async function handleRejectSharedNode(item: V1Node) {
           density="compact"
         />
       </v-col>
-      <v-col cols="12" md="4" lg="2">
+      <v-col v-if="isAdmin" cols="12" md="3">
+        <v-text-field
+          v-model="filterNodeKey"
+          label="Filter by Node Key"
+          hint="Base 64 input or use 0x prefix for a hex string"
+          clearable
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="12" md="3" lg="2" xl="1">
         <v-switch
           class="ms-2"
           v-model="filterOnlineOnly"
@@ -875,12 +901,12 @@ async function handleRejectSharedNode(item: V1Node) {
           @update:modelValue="loadItems(loadOptions, true)"
         />
       </v-col>
-      <v-col cols="12" md="4" lg="2" align="end">
+      <v-col cols="12" md="3" lg="2" xl="1" align="end">
         <v-btn class="me-2" color="primary" @click="applyFilters">
           Filter
         </v-btn>
       </v-col>
-      <v-col cols="12" md="4" lg="2" align="end">
+      <v-col cols="12" md="3" lg="2" xl="1" align="end">
         <v-btn class="me-2" variant="outlined" @click="clearFilters">
           Clear Filters
         </v-btn>

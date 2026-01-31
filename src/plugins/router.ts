@@ -4,10 +4,12 @@
 import { createWebHistory, createRouter } from 'vue-router'
 
 import About from '@/components/About.vue'
+import AddCustomAuth from '../components/logins/AddCustomAuth.vue'
 import AdminUsers from '@/components/users/AdminUsers.vue'
 import Approvals from '@/components/Approvals.vue'
 import Apps from '@/components/Apps.vue'
 import ConfirmSession from '@/components/logins/ConfirmSession.vue'
+import CustomAuth from '@/components/logins/CustomAuth.vue'
 import Dashboard from '@/components/Dashboard.vue'
 import DeleteAccount from '@/components/settings/DeleteAccount.vue'
 import Devices from '@/components/Devices.vue'
@@ -20,6 +22,7 @@ import NoService from '@/components/NoService.vue'
 import OauthSuccess from '@/components/logins/OauthSuccess.vue'
 import Policies from '@/components/Policies.vue'
 import PrivacyPolicy from '@/components/terms/PrivacyPolicy.vue'
+import QRCodeSignIn from '@/components/logins/QRCodeSignIn.vue'
 import RegularUsers from '@/components/users/RegularUsers.vue'
 import SignUp from '@/components/SignUp.vue'
 import SupervisorFwConfigs from '@/components/supervisor/SupervisorFwConfigs.vue'
@@ -43,14 +46,18 @@ import WgDevices from '@/components/vpn/WgDevices.vue'
 import WgNodes from '@/components/vpn/WgNodes.vue'
 import VpnWgServers from '@/components/vpn/VpnWgServers.vue'
 import { useUserStore } from '@/stores/user'
+import AddCustomAuthSuccess from '@/components/logins/AddCustomAuthSuccess.vue'
 
 const routes = [
   { path: '/', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/about', component: About },
+  { path: '/add-custom-auth', component: AddCustomAuth },
+  { path: '/add-custom-auth-success', component: AddCustomAuthSuccess, meta: { requiresAuth: true } },
   { path: '/admin-users', component: AdminUsers },
   { path: '/approvals', component: Approvals, meta: { requiresAuth: true } },
   { path: '/apps', component: Apps, meta: { requiresAuth: true } },
   { path: '/confirm-session', component: ConfirmSession, meta: { requiresAuth: true } },
+  { path: '/custom-auth-providers', component: CustomAuth, meta: { requiresAuth: true } },
   { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/delete-account', component: DeleteAccount, meta: { requiresAuth: true } },
   {
@@ -113,7 +120,8 @@ const routes = [
   },
   { path: '/policies', component: Policies, meta: { requiresAuth: true } },
   { path: '/privacy-policy', component: PrivacyPolicy },
-  { path: '/regular-users', component: RegularUsers, meta: { requiresAuth: true }  },
+  { path: '/regular-users', component: RegularUsers, meta: { requiresAuth: true } },
+  { path: '/qr-code-sign-in/:url', component: QRCodeSignIn, meta: { requiresAuth: false }, props: true },
   { path: '/signup', component: SignUp },
   { path: '/tenants', component: Tenants, meta: { requiresAuth: true } },
   {

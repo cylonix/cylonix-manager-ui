@@ -3,7 +3,7 @@
 
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { LoginType } from '@/clients/manager/api'
+import { LoginType, OauthProvider } from '@/clients/manager/api'
 
 export const useLoginStore = defineStore(
   'login',
@@ -13,10 +13,12 @@ export const useLoginStore = defineStore(
     )
     const namespace = ref()
     const namespaceType = ref('community')
+    const oauthProvider = ref<OauthProvider | undefined>(undefined)
     function $reset() {
       namespace.value = undefined
+      oauthProvider.value = undefined
     }
-    return { loginType, namespace, namespaceType, $reset }
+    return { loginType, namespace, namespaceType, oauthProvider, $reset }
   },
   {
     persist: true

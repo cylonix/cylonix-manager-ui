@@ -4,6 +4,7 @@
 import axios, { AxiosError } from 'axios'
 import { HttpStatusCode } from 'axios'
 import {
+  BadRequest,
   DeviceApi,
   LabelApi,
   LoginApi,
@@ -61,6 +62,24 @@ function handleError(error: any): Alert | Toast {
   }
 }
 
+export function tryDecodeError(error: string | undefined) {
+  if (!error) {
+    return
+  }
+  if (error.startsWith("Request failed with status code 400: ")) {
+    const msg = error.replace("Request failed with status code 400: ", "")
+    // try to decode json message into BadRequest
+    try {
+      console.log('Decoding bad request message:', msg)
+      const badReq = JSON.parse(msg) as BadRequest
+      return badReq
+    } catch (e) {
+      console.log('Failed to decode bad request message:', e)
+      // ignore json parse error
+      return
+    }
+  }
+}
 export async function tryRequest(fn: () => any): Promise<Alert | undefined> {
   try {
     return await fn()

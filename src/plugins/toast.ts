@@ -12,6 +12,7 @@ import { useToastStore } from '@/stores/toast'
 export interface Toast {
   text?: string
   color?: string
+  timeout?: number
   on: boolean
 }
 
