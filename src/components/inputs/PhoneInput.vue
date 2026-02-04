@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import isMobilePhone from 'validator/es/lib/isMobilePhone'
 import { ref } from 'vue'
+import { mdiPhoneOutline } from '@mdi/js'
 
 const emit = defineEmits(['change'])
 const props = defineProps({ required: Boolean, requiredMessage: String })
@@ -34,7 +35,7 @@ const phoneRules = ref([
       clearable: true,
       density: 'compact',
       rules: phoneRules,
-      prependInnerIcon: 'mdi-phone-outline',
+      prependInnerIcon: mdiPhoneOutline,
     }"
     label="Phone"
     :required="required"

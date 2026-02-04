@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { decamelize } from '@cylonix/humps'
+import { mdiAccountPlus, mdiApple, mdiGithub } from '@mdi/js'
 import { V1User } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
@@ -200,7 +201,7 @@ function invitesSent() {
           <v-row class="mt-2 mb-1 mx-1" justify="end" align="center"
             ><v-btn
               color="primary"
-              prepend-icon="mdi-account-plus"
+              :prepend-icon="mdiAccountPlus"
               @click="welcomeDialog = true"
             >
               Send Welcome Email
@@ -227,7 +228,7 @@ function invitesSent() {
           <v-row class="mt-2 mb-1 mx-1" justify="end" align="center"
             ><v-btn
               color="primary"
-              prepend-icon="mdi-account-plus"
+              :prepend-icon="mdiAccountPlus"
               @click="inviteDialog = true"
             >
               Invite External User
@@ -253,12 +254,12 @@ function invitesSent() {
             />
             <v-icon
               v-if="signInProvider == 'apple'"
-              icon="mdi-apple"
+              :icon="mdiApple"
               size="32"
             />
             <v-icon
               v-if="signInProvider == 'github'"
-              icon="mdi-github"
+              :icon="mdiGithub"
               size="32"
             />
             <p v-if="isCustomProvider">Custom</p>

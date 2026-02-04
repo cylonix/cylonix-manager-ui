@@ -12,6 +12,15 @@ import { tryRequest, userAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { shortTs } from '@/plugins/date'
 import ConfirmDialog from './ConfirmDialog.vue'
+import {
+  mdiShare,
+  mdiLinkVariant,
+  mdiContentCopy,
+  mdiRefresh,
+  mdiAccountMultiple,
+  mdiDelete,
+  mdiEmail,
+} from '@mdi/js'
 
 const props = defineProps<{
   modelValue: boolean
@@ -274,7 +283,7 @@ const deleteConfirmationText = () => {
                   @click="confirmShare"
                   :loading="loading"
                   :disabled="loading || !isValid || !emails"
-                  prepend-icon="mdi-share"
+                  :prepend-icon="mdiShare"
                 >
                   Share
                 </v-btn>
@@ -308,7 +317,7 @@ const deleteConfirmationText = () => {
                   @click="generateInviteLink"
                   :loading="loading"
                   :disabled="loading || !isValid || !emails"
-                  prepend-icon="mdi-link-variant"
+                  :prepend-icon="mdiLinkVariant"
                 >
                   Generate Link
                 </v-btn>
@@ -323,7 +332,7 @@ const deleteConfirmationText = () => {
                       <template v-slot:activator="{ props }">
                         <v-btn
                           v-bind="props"
-                          icon="mdi-content-copy"
+                          :icon="mdiContentCopy"
                           variant="text"
                           @click="copyLink"
                         />
@@ -339,7 +348,7 @@ const deleteConfirmationText = () => {
           <v-card-title class="text-subtitle-1">
             Current Invites
             <v-btn
-              icon="mdi-refresh"
+              :icon="mdiRefresh"
               variant="text"
               size="small"
               @click="loadCurrentInvites"
@@ -351,7 +360,7 @@ const deleteConfirmationText = () => {
             <v-list v-if="currentInvites.length > 0" lines="two">
               <v-list-item v-for="invite in currentInvites" :key="invite.id">
                 <template v-slot:prepend>
-                  <v-icon>mdi-account-multiple</v-icon>
+                  <v-icon :icon="mdiAccountMultiple" />
                 </template>
                 <v-list-item-title>
                   {{ invite.emails.join(', ') }}
@@ -372,7 +381,7 @@ const deleteConfirmationText = () => {
                       <template v-slot:activator="{ props }">
                         <v-btn
                           v-bind="props"
-                          icon="mdi-delete"
+                          :icon="mdiDelete"
                           variant="text"
                           size="small"
                           color="error"
@@ -384,7 +393,7 @@ const deleteConfirmationText = () => {
                       <template v-slot:activator="{ props }">
                         <v-btn
                           v-bind="props"
-                          icon="mdi-email"
+                          :icon="mdiEmail"
                           variant="text"
                           size="small"
                           color="primary"
@@ -396,7 +405,7 @@ const deleteConfirmationText = () => {
                       <template v-slot:activator="{ props }">
                         <v-btn
                           v-bind="props"
-                          icon="mdi-content-copy"
+                          :icon="mdiContentCopy"
                           variant="text"
                           size="small"
                           color="info"
@@ -437,7 +446,7 @@ const deleteConfirmationText = () => {
         <v-list class="mt-2">
           <v-list-item v-for="email in emailList" :key="email">
             <template v-slot:prepend>
-              <v-icon>mdi-email</v-icon>
+              <v-icon :icon="mdiEmail" />
             </template>
             <v-list-item-title>{{ email }}</v-list-item-title>
           </v-list-item>

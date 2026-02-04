@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 defineProps(['hint', 'loading', 'required', 'roles', 'title'])
+import { mdiAccountGroup } from '@mdi/js'
 const emit = defineEmits(['refresh'])
 const value = defineModel<any>()
 </script>
@@ -18,7 +19,7 @@ const value = defineModel<any>()
     :label="title ?? 'Select roles'"
     :loading="loading"
     density="compact"
-    prepend-inner-icon="mdi-account-group"
+    :prepend-inner-icon="mdiAccountGroup"
     chips
     multiple
     :rules="[(v) => !required || !!(v && v.length) || 'Role is required']"

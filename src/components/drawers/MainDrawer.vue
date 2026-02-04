@@ -5,6 +5,24 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import {
+  mdiMonitorDashboard,
+  mdiMessageBadgeOutline,
+  mdiDomainPlus,
+  mdiAccountMultipleOutline,
+  mdiWan,
+  mdiDevices,
+  mdiServerNetwork,
+  mdiKeyChain,
+  mdiRoutes,
+  mdiLockOutline,
+  mdiVpn,
+  mdiLabelMultipleOutline,
+  mdiAxisYArrowLock,
+  mdiCogOutline,
+  mdiDeleteOutline,
+  mdiInformationOutline,
+} from '@mdi/js'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 const drawer = defineModel<boolean>('drawer')
@@ -28,7 +46,7 @@ function updateRail() {
     <v-list v-model:opened="opened" density="compact" nav>
       <v-list-item
         v-if="isAdmin"
-        prepend-icon="mdi-monitor-dashboard"
+        :prepend-icon="mdiMonitorDashboard"
         title="Dashboard"
         to="/dashboard"
       >
@@ -37,7 +55,7 @@ function updateRail() {
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
-            prepend-icon="mdi-message-badge-outline"
+            :prepend-icon="mdiMessageBadgeOutline"
             title="Approvals"
           ></v-list-item>
         </template>
@@ -63,19 +81,19 @@ function updateRail() {
       </v-list-group>
       <v-list-item
         v-if="loggedIn && !isAdmin"
-        prepend-icon="mdi-message-badge-outline"
+        :prepend-icon="mdiMessageBadgeOutline"
         title="Device approvals"
         to="/device-approvals"
       ></v-list-item>
       <v-list-item
         v-if="isAdmin"
-        prepend-icon="mdi-domain-plus"
+        :prepend-icon="mdiDomainPlus"
         title="Tenants"
         to="/tenants"
       ></v-list-item>
       <v-list-item
         v-if="!isSysAdmin && isAdmin"
-        prepend-icon="mdi-account-multiple-outline"
+        :prepend-icon="mdiAccountMultipleOutline"
         title="User Management"
         to="/users"
       ></v-list-item>
@@ -83,7 +101,7 @@ function updateRail() {
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
-            prepend-icon="mdi-account-multiple-outline"
+            :prepend-icon="mdiAccountMultipleOutline"
             title="User Management"
           ></v-list-item>
         </template>
@@ -98,7 +116,7 @@ function updateRail() {
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
-            prepend-icon="mdi-wan"
+            :prepend-icon="mdiWan"
             title="POPs"
           ></v-list-item>
         </template>
@@ -113,42 +131,42 @@ function updateRail() {
       <v-list-item
         v-if="isNetworkAdmin && !isAdmin"
         title="Users"
-        prepend-icon="mdi-account-multiple-outline"
+        :prepend-icon="mdiAccountMultipleOutline"
         to="/ui/vpn-users"
       ></v-list-item>
       <v-list-item
         v-if="loggedIn && !isAdmin"
-        prepend-icon="mdi-devices"
+        :prepend-icon="mdiDevices"
         title="Machines"
         to="/ui/vpn-nodes"
       ></v-list-item>
       <v-list-item
         v-if="loggedIn && !isSysAdmin"
         title="WireGuard Servers"
-        prepend-icon="mdi-server-network"
+        :prepend-icon="mdiServerNetwork"
         to="/ui/vpn-wg-servers"
       ></v-list-item>
       <v-list-item
         v-if="loggedIn && !isAdmin"
         title="Auth Keys"
-        prepend-icon="mdi-key-chain"
+        :prepend-icon="mdiKeyChain"
         to="/ui/vpn-user-keys"
       ></v-list-item>
       <v-list-item
         v-if="isNetworkAdmin && !isAdmin"
-        prepend-icon="mdi-routes"
+        :prepend-icon="mdiRoutes"
         title="Routes"
         to="/ui/vpn-routes"
       ></v-list-item>
       <v-list-item
         v-if="isAdmin"
-        prepend-icon="mdi-devices"
+        :prepend-icon="mdiDevices"
         title="Devices Management"
         to="/devices"
       ></v-list-item>
       <v-list-item
         v-if="isNetworkAdmin && !isAdmin"
-        prepend-icon="mdi-lock-outline"
+        :prepend-icon="mdiLockOutline"
         title="Access Controls"
         to="/policies"
       ></v-list-item>
@@ -156,7 +174,7 @@ function updateRail() {
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
-            prepend-icon="mdi-vpn"
+            :prepend-icon="mdiVpn"
             title="VPN"
           ></v-list-item>
         </template>
@@ -180,13 +198,13 @@ function updateRail() {
       </v-list-group>
       <v-list-item
         v-if="isAdmin"
-        prepend-icon="mdi-label-multiple-outline"
+        :prepend-icon="mdiLabelMultipleOutline"
         title="Labels"
         to="/labels"
       ></v-list-item>
       <v-list-item
         v-if="isAdmin"
-        prepend-icon="mdi-axis-y-arrow-lock"
+        :prepend-icon="mdiAxisYArrowLock"
         title="Policies"
         to="/policies"
       ></v-list-item>
@@ -194,7 +212,7 @@ function updateRail() {
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
-            prepend-icon="mdi-cog-outline"
+            :prepend-icon="mdiCogOutline"
             title="Settings"
           ></v-list-item>
         </template>
@@ -202,12 +220,12 @@ function updateRail() {
           v-if="!isSysAdmin && !isAdmin"
           title="Delete Account"
           to="/delete-account"
-          prepend-icon="mdi-delete-outline"
+          :prepend-icon="mdiDeleteOutline"
           base-color="error"
         ></v-list-item>
       </v-list-group>
       <v-list-item
-        prepend-icon="mdi-information-outline"
+        :prepend-icon="mdiInformationOutline"
         title="About"
         to="/about"
       ></v-list-item>

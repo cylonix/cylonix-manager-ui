@@ -8,6 +8,7 @@ import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDisplay } from 'vuetify'
 import { useRouter } from 'vue-router'
+import { mdiCircle, mdiCheckCircle, mdiContentSave } from '@mdi/js'
 import { User, WgDevice, WgNode } from '@/clients/manager/api'
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
@@ -49,7 +50,6 @@ const smHeaders = ref([
 ] as const)
 
 // Client table headers
-
 
 const clientSmHeaders = ref([
   { title: 'Name', key: 'name' },
@@ -360,14 +360,11 @@ async function viewNodeDetails(item: WgDevice) {
 
     <v-row v-if="gatewayEnabled" class="mx-2 my-1" align="center" justify="end">
       <v-col justify="end" class="text-right" align="center">
-        <v-btn @click="openWgOnlyNodeDialog">
-          Create a WireGuard Client
-        </v-btn>
+        <v-btn @click="openWgOnlyNodeDialog"> Create a WireGuard Client </v-btn>
         <p>
           Create a WireGuard client and its configuration to connect to a
-          selected WireGuard gateway.
-          The configuration can be saved to be imported to your WiFi router e.g.
-          a GL.iNet router
+          selected WireGuard gateway. The configuration can be saved to be
+          imported to your WiFi router e.g. a GL.iNet router
         </p>
       </v-col>
     </v-row>
@@ -375,7 +372,9 @@ async function viewNodeDetails(item: WgDevice) {
     <v-row class="mx-2 my-1" align="center" justify="space-between">
       <v-col>
         <v-chip size="large" class="mt-2">WireGuard Servers</v-chip>
-        <v-chip size="large" class="mx-2 mt-2 text-bold">{{ totalItems }}</v-chip>
+        <v-chip size="large" class="mx-2 mt-2 text-bold">{{
+          totalItems
+        }}</v-chip>
         <v-chip v-if="!isAdmin" variant="text"
           >Network Domain: {{ user?.networkDomain }}
         </v-chip>
@@ -402,9 +401,11 @@ async function viewNodeDetails(item: WgDevice) {
       </template>
 
       <template v-slot:item.online="{ item }">
-        <v-icon size="12" :color="item.online ? 'green' : 'grey'"
-          >mdi-circle</v-icon
-        >
+        <v-icon
+          size="12"
+          :color="item.online ? 'green' : 'grey'"
+          :icon="mdiCircle"
+        />
         <span class="ml-1" v-if="!item.online">{{
           shortTs(item.lastSeen)
         }}</span>
@@ -551,7 +552,7 @@ async function viewNodeDetails(item: WgDevice) {
   <v-dialog v-model="wgConfigDialog" max-width="800" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
-        <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+        <v-icon color="success" class="mr-2" :icon="mdiCheckCircle" />
         WireGuard Client Configuration Created
       </v-card-title>
 
@@ -581,7 +582,7 @@ async function viewNodeDetails(item: WgDevice) {
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
-          prepend-icon="mdi-content-save"
+          :prepend-icon="mdiContentSave"
           @click="saveWgConfig"
         >
           Save to File

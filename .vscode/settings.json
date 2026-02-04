@@ -10,9 +10,12 @@
         "codeberg",
         "decamelize",
         "derp",
+        "echarts",
         "foxids",
         "Gitea",
+        "Hairpinning",
         "headscale",
+        "Icmpv",
         "iconsets",
         "imac",
         "intf",
@@ -24,7 +27,9 @@
         "pinia",
         "Qrcode",
         "subsys",
+        "upnp",
         "VITE",
+        "wsnotices",
         "zitadel"
     ]
 }

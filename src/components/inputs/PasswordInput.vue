@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import isStrongPassword from 'validator/es/lib/isStrongPassword'
 import { ref } from 'vue'
+import { mdiLockOutline, mdiEye, mdiEyeOff } from '@mdi/js'
 import type { PropType } from 'vue'
 import type { VTextField } from 'vuetify/components'
 type UnwrapReadonlyArray<A> = A extends Readonly<Array<infer I>> ? I : A
@@ -50,7 +51,6 @@ function onChange() {
   passwordTextField.value?.resetValidation()
   emit('change')
 }
-
 </script>
 <template>
   <v-text-field
@@ -59,10 +59,10 @@ function onChange() {
     autocomplete="password"
     clearable
     density="compact"
-    prepend-inner-icon="mdi-lock-outline"
+    :prepend-inner-icon="mdiLockOutline"
     ref="passwordTextField"
     required
-    :append-inner-icon="passwordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+    :append-inner-icon="passwordVisible ? mdiEyeOff : mdiEye"
     :label="label"
     :placeholder="placeholder"
     :rules="rules.concat(addRules as Array<any> || [])"

@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { mdiArrowLeft, mdiOpenid } from '@mdi/js'
 import { useDisplay } from 'vuetify'
 import type { Alert } from '@/plugins/alert'
 import { VForm } from 'vuetify/components'
@@ -261,12 +262,13 @@ function goBack() {
     <v-row class="my-4">
       <v-col align="start">
         <v-chip color="primary" variant="text" @click="goBack"
-          ><v-icon class="mr-2">mdi-arrow-left</v-icon>Back to sign in</v-chip
+          ><v-icon class="mr-2" :icon="mdiArrowLeft"></v-icon>Back to sign
+          in</v-chip
         >
       </v-col>
     </v-row>
     <v-row class="mx-2" justify="center" align="center">
-      <v-icon class="me-2">mdi-openid</v-icon
+      <v-icon class="me-2" :icon="mdiOpenid"></v-icon
       ><span class="my-4 text-h5">
         Add a custom OIDC sign-in for your domain
       </span>

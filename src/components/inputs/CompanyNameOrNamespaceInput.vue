@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { mdiDomain } from '@mdi/js'
 import type { Alert } from '@/plugins/alert'
 import { tenantAPI, tryRequest } from '@/plugins/api'
 
@@ -54,7 +55,7 @@ async function checkNameAvailable() {
       clearable: true,
       density: 'compact',
       loading: loading,
-      prependInnerIcon: 'mdi-domain',
+      prependInnerIcon: mdiDomain,
     }"
     :check="checkAvailable"
     :check-tooltip="checkTooltip"

@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useWsNotices } from '@/composables/wsnotices'
 import { loginAPI, tryRequest } from '@/plugins/api'
 import { LoginType } from '@/clients/manager/api'
+import { mdiBell, mdiLockReset } from '@mdi/js'
 
 import { useNoticeStore } from '@/stores/notices'
 import { useToastStore } from '@/stores/toast'
@@ -124,7 +125,7 @@ setInterval(async () => {
           v-if="wsStatus"
           @click="toggle"
           ><template v-slot:prepend>
-            <v-icon :color="wsStatusColor" icon="mdi-bell"></v-icon> </template
+            <v-icon :color="wsStatusColor" :icon="mdiBell"></v-icon> </template
           ><span>{{ wsStatus }}</span></v-chip
         >
       </template>
@@ -168,7 +169,7 @@ setInterval(async () => {
 
         <v-list v-if="loginType == LoginType.Username">
           <v-list-item
-            prepend-icon="mdi-lock-reset"
+            :prepend-icon="mdiLockReset"
             @click="openChangePassword"
           >
             <v-list-item-title>Change Password</v-list-item-title>

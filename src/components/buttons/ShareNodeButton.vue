@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { V1Node } from '@/clients/headscale/api'
+import { mdiShareVariant } from '@mdi/js'
 
 const props = defineProps<{
   item: V1Node
@@ -22,7 +23,7 @@ function handleClick() {
     <template v-slot:activator="{ props }">
       <v-btn
         v-bind="props"
-        icon="mdi-share-variant"
+        :icon="mdiShareVariant"
         variant="text"
         size="small"
         @click="handleClick"

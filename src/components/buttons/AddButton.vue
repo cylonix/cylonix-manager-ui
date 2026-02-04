@@ -5,6 +5,8 @@
 
 <script setup lang="ts">
 import { mergeProps } from 'vue'
+import { mdiPlus } from '@mdi/js'
+
 defineProps(['label', 'parentProps'])
 const emit = defineEmits(['click'])
 function click() {
@@ -17,7 +19,7 @@ function click() {
       <v-btn
         class="mx-1"
         v-bind="mergeProps(parentProps, tooltip)"
-        icon="mdi-plus"
+        :icon="mdiPlus"
         size="small"
         variant="plain"
         @click="click"

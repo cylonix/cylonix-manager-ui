@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
+import { mdiCheck } from '@mdi/js'
 import { decamelize } from '@cylonix/humps'
 import { PredefinedRoles, User } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
@@ -295,20 +296,24 @@ function clearFilters() {
         />
       </template>
       <template v-slot:item.wgEnabled="{ item }">
-        <v-icon v-if="item.networkSetting?.wgEnabled" color="purple"
-          >mdi-check</v-icon
-        >
+        <v-icon
+          v-if="item.networkSetting?.wgEnabled"
+          color="purple"
+          :icon="mdiCheck"
+        />
       </template>
       <template v-slot:item.gatewayEnabled="{ item }">
-        <v-icon v-if="item.networkSetting?.gatewayEnabled" color="purple"
-          >mdi-check</v-icon
-        >
+        <v-icon
+          v-if="item.networkSetting?.gatewayEnabled"
+          color="purple"
+          :icon="mdiCheck"
+        />
       </template>
       <template v-slot:item.auto-approve-device="{ item }">
-        <v-icon v-if="item.autoApproveDevice" color="purple">mdi-check</v-icon>
+        <v-icon v-if="item.autoApproveDevice" color="purple" :icon="mdiCheck" />
       </template>
       <template v-slot:item.auto-accept-routes="{ item }">
-        <v-icon v-if="item.autoAcceptRoutes" color="red">mdi-check</v-icon>
+        <v-icon v-if="item.autoAcceptRoutes" color="red" :icon="mdiCheck" />
       </template>
       <template v-slot:item.actions="{ item }">
         <div class="d-flex align-center">

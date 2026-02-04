@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { mdiAccountOutline } from '@mdi/js'
 const emit = defineEmits(['change'])
 const username = defineModel<string>()
 const rules = ref([
@@ -22,7 +23,7 @@ const rules = ref([
       clearable: true,
       density: 'compact',
       rules: rules,
-      prependInnerIcon: 'mdi-account-outline',
+      prependInnerIcon: mdiAccountOutline,
     }"
     label="Username *"
     required

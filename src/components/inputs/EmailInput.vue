@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import isEmail from 'validator/es/lib/isEmail'
 import { ref } from 'vue'
+import { mdiEmailOutline } from '@mdi/js'
 const emit = defineEmits(['change', 'submit'])
 const props = defineProps({ required: Boolean, requiredMessage: String })
 const value = defineModel<string>()
@@ -31,7 +32,7 @@ const rules = ref([
       clearable: true,
       density: 'compact',
       rules: rules,
-      prependInnerIcon: 'mdi-email-outline',
+      prependInnerIcon: mdiEmailOutline,
     }"
     input-ref="emailTextField"
     label="Email"

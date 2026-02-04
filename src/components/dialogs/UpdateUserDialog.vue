@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
+import { mdiCheck, mdiClose } from '@mdi/js'
 import { VForm } from 'vuetify/components'
 import { MeshVpnMode, User, UserUpdateInfo } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
@@ -39,7 +40,7 @@ const ready = computed(() => {
     vpnMode.value == t?.networkSetting?.meshVpnMode &&
     autoApproveDevice.value == t?.autoApproveDevice &&
     gatewayEnabled.value == t?.networkSetting?.gatewayEnabled
-  return t && (isFormValid.value !== false) && !same
+  return t && isFormValid.value !== false && !same
 })
 
 const text = computed(() => {
@@ -136,10 +137,7 @@ async function update() {
           :color="gatewayEnabled ? 'green' : 'grey'"
           @click="gatewayEnabled = !gatewayEnabled"
         >
-          <v-icon
-            start
-            :icon="gatewayEnabled ? 'mdi-check' : 'mdi-close'"
-          ></v-icon>
+          <v-icon start :icon="gatewayEnabled ? mdiCheck : mdiClose"></v-icon>
           Gateway Enabled
         </v-chip>
         <v-chip
@@ -149,7 +147,7 @@ async function update() {
         >
           <v-icon
             start
-            :icon="autoApproveDevice ? 'mdi-check' : 'mdi-close'"
+            :icon="autoApproveDevice ? mdiCheck : mdiClose"
           ></v-icon>
           Auto Approve Device
         </v-chip>

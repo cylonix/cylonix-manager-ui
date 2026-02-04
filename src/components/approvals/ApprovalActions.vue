@@ -6,6 +6,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ApprovalState } from '@/clients/manager/api'
+import {
+  mdiDeleteOutline,
+  mdiThumbUpOutline,
+  mdiThumbDownOutline,
+} from '@mdi/js'
 const emit = defineEmits([
   'delete',
   'approve',
@@ -64,7 +69,7 @@ function okReject() {
     size="small"
     @click="clickDelete"
   >
-    mdi-delete-outline
+    {{ mdiDeleteOutline }}
   </v-icon>
   <v-icon
     v-if="!noApprove && state != ApprovalState.Approved"
@@ -73,7 +78,7 @@ function okReject() {
     size="small"
     @click="clickApprove"
   >
-    mdi-thumb-up-outline
+    {{ mdiThumbUpOutline }}
   </v-icon>
   <v-icon
     v-if="
@@ -84,7 +89,7 @@ function okReject() {
     size="small"
     @click="clickReject"
   >
-    mdi-thumb-down-outline
+    {{ mdiThumbDownOutline }}
   </v-icon>
   <ConfirmDialog
     v-model="deleteDialog"

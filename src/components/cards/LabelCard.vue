@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 defineProps(['label', 'variant'])
+import { mdiStar } from '@mdi/js'
 </script>
 
 <template>
@@ -16,7 +17,7 @@ defineProps(['label', 'variant'])
           <v-avatar :color="item.color"></v-avatar>
         </template>
         <template v-slot:item.star="{ item }">
-          <v-icon v-if="item.star" color="green" icon="mdi-star"></v-icon>
+          <v-icon v-if="item.star" color="green" :icon="mdiStar"></v-icon>
         </template>
         <template v-slot:bottom></template
       ></v-data-table>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { mdiContentCopy } from '@mdi/js'
 import { PredefinedRoles } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
@@ -131,10 +132,11 @@ function copyLink() {
             <div class="d-flex align-center">
               <code class="text-body-2 flex-grow-1">{{ inviteLink }}</code>
               <v-btn
-                icon="mdi-content-copy"
+                :icon="mdiContentCopy"
                 variant="text"
                 @click="copyLink"
-              ></v-btn>
+                aria-label="Copy invite link"
+              />
             </div>
           </v-sheet>
         </v-form>

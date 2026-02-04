@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { mdiThumbUp, mdiThumbDown, mdiCheck } from '@mdi/js'
 const props = defineProps(['size', 'success', 'tooltip', 'valid'])
 const emit = defineEmits(['check'])
 const color = computed(() => {
@@ -21,12 +22,12 @@ const color = computed(() => {
 })
 const icon = computed(() => {
   if (props.success) {
-    return 'mdi-thumb-up'
+    return mdiThumbUp
   }
   if (props.success === false) {
-    return 'mdi-thumb-down'
+    return mdiThumbDown
   }
-  return 'mdi-check'
+  return mdiCheck
 })
 </script>
 <template>
@@ -40,7 +41,7 @@ const icon = computed(() => {
         variant="plain"
         @click="emit('check')"
       >
-        <v-icon :size="size">{{ icon }}</v-icon>
+        <v-icon :size="size" :icon="icon" />
       </v-btn>
     </template>
     <span>{{ tooltip }}</span>

@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { mdiCheck } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { decamelize } from '@cylonix/humps'
 import { V1PreAuthKey } from '@/clients/headscale/api'
@@ -356,13 +357,13 @@ defineExpose({
         <ShortenTextChip :text="item.key ?? ''"></ShortenTextChip>
       </template>
       <template v-slot:item.ephemeral="{ item }">
-        <v-icon v-if="item.ephemeral" color="purple">mdi-check</v-icon>
+        <v-icon v-if="item.ephemeral" color="purple" :icon="mdiCheck" />
       </template>
       <template v-slot:item.reusable="{ item }">
-        <v-icon v-if="item.reusable" color="purple">mdi-check</v-icon>
+        <v-icon v-if="item.reusable" color="purple" :icon="mdiCheck" />
       </template>
       <template v-slot:item.used="{ item }">
-        <v-icon v-if="item.used" color="purple">mdi-check</v-icon>
+        <v-icon v-if="item.used" color="purple" :icon="mdiCheck" />
       </template>
       <template v-slot:item.aclTags="{ item }">
         <span v-if="item.aclTags && item.aclTags.length > 0">{{

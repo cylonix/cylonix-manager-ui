@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { mdiCircle, mdiChevronDown } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -271,8 +272,13 @@ const nodesStore = useNodesStore()
 const { isAdmin, isNetworkAdmin, namespace, isSysAdmin, user } = storeToRefs(
   userStore
 )
-const { myNodes, totalMyNodes, sharedNodes, totalSharedNodes, allUsers } =
-  storeToRefs(nodesStore)
+const {
+  myNodes,
+  totalMyNodes,
+  sharedNodes,
+  totalSharedNodes,
+  allUsers,
+} = storeToRefs(nodesStore)
 
 // Computed properties that switch based on current tab
 const serverItems = computed(() => {
@@ -459,12 +465,12 @@ async function loadItems(options: any, forceRefresh = false) {
         sortBy = 'last_seen'
       } else if (sortBy === 'name') {
         sortBy = 'given_name'
-      } else if (sortBy === "ip_addresses") {
-        sortBy = "ipv4"
-      } else if (sortBy === "pre_auth_key") {
-        sortBy = "auth_key_id"
-      } else if (sortBy === "register_with") {
-        sortBy = "register_method"
+      } else if (sortBy === 'ip_addresses') {
+        sortBy = 'ipv4'
+      } else if (sortBy === 'pre_auth_key') {
+        sortBy = 'auth_key_id'
+      } else if (sortBy === 'register_with') {
+        sortBy = 'register_method'
       }
       sortDesc = sort.order ?? ''
     } else {
@@ -1001,16 +1007,18 @@ async function handleRejectSharedNode(item: V1Node) {
         </p>
       </template>
       <template v-slot:item.lastSeenOrOnline="{ item }">
-        <v-icon v-if="item.online" size="12" color="green">mdi-circle</v-icon>
+        <v-icon v-if="item.online" size="12" color="green" :icon="mdiCircle" />
         <span v-if="item.online" class="mx-1 text-grey--text text-caption"
           >Online</span
         >
         <span v-else>{{ shortTs(item.lastSeen) }}</span>
       </template>
       <template v-slot:item.online="{ item }">
-        <v-icon size="12" :color="item.online ? 'green' : 'grey'"
-          >mdi-circle</v-icon
-        >
+        <v-icon
+          size="12"
+          :color="item.online ? 'green' : 'grey'"
+          :icon="mdiCircle"
+        />
       </template>
       <template v-slot:item.expiry="{ item }">
         <VpnExpiryMenu
@@ -1031,7 +1039,7 @@ async function handleRejectSharedNode(item: V1Node) {
               {{ item.shareToUsers.length }} User{{
                 item.shareToUsers.length > 1 ? 's' : ''
               }}
-              <v-icon right>mdi-chevron-down</v-icon>
+              <v-icon :icon="mdiChevronDown" right />
             </v-btn>
           </template>
           <v-list>

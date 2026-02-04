@@ -5,6 +5,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import {
+  mdiMicrosoftWindows,
+  mdiLinux,
+  mdiApple,
+  mdiAndroid,
+  mdiLaptop,
+  mdiPencil,
+  mdiArrowLeft,
+  mdiCircle,
+  mdiCircleOutline,
+} from '@mdi/js'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useDisplay } from 'vuetify'
@@ -319,17 +330,17 @@ function getIconForNode(node: V1Node) {
   const os = node.hostinfo?.os ?? ''
   switch (os.toLowerCase()) {
     case 'windows':
-      return 'mdi-microsoft-windows'
+      return mdiMicrosoftWindows
     case 'linux':
-      return 'mdi-linux'
+      return mdiLinux
     case 'macos':
-      return 'mdi-apple'
+      return mdiApple
     case 'android':
-      return 'mdi-android'
+      return mdiAndroid
     case 'ios':
-      return 'mdi-apple'
+      return mdiApple
     default:
-      return 'mdi-laptop'
+      return mdiLaptop
   }
 }
 </script>
@@ -341,7 +352,7 @@ function getIconForNode(node: V1Node) {
       <v-col cols="12">
         <v-btn
           @click="goBack"
-          prepend-icon="mdi-arrow-left"
+          :prepend-icon="mdiArrowLeft"
           variant="text"
           class="mb-4 my-2"
         >
@@ -352,9 +363,11 @@ function getIconForNode(node: V1Node) {
           <v-card-title class="d-flex align-center">
             <v-row>
               <v-col cols="12" sm="8">
-                <v-icon class="mr-3" size="large">{{
-                  getIconForNode(nodeItem as V1Node)
-                }}</v-icon>
+                <v-icon
+                  class="mr-3"
+                  size="large"
+                  :icon="getIconForNode(nodeItem as V1Node)"
+                />
                 <div>
                   <div class="d-flex align-center flex-wrap">
                     <h2>{{ nodeItem.givenName }}</h2>
@@ -365,7 +378,7 @@ function getIconForNode(node: V1Node) {
                       class="ml-2"
                       @click="openRenameDialog"
                     >
-                      <v-icon size="small">mdi-pencil</v-icon>
+                      <v-icon size="small" :icon="mdiPencil" />
                     </v-btn>
                   </div>
                   <div class="text-subtitle-1 text-medium-emphasis">
@@ -383,9 +396,10 @@ function getIconForNode(node: V1Node) {
                   :color="nodeItem.online ? 'success' : 'error'"
                   size="large"
                 >
-                  <v-icon start>{{
-                    nodeItem.online ? 'mdi-circle' : 'mdi-circle-outline'
-                  }}</v-icon>
+                  <v-icon
+                    start
+                    :icon="nodeItem.online ? mdiCircle : mdiCircleOutline"
+                  ></v-icon>
                   {{ nodeItem.online ? 'Online' : 'Offline' }}
                 </v-chip>
                 <DeleteNodeButton
@@ -861,7 +875,7 @@ function getIconForNode(node: V1Node) {
   <v-container v-else>
     <v-row>
       <v-col cols="12" class="text-center">
-        <v-btn @click="goBack" prepend-icon="mdi-arrow-left" variant="text">
+        <v-btn @click="goBack" :prepend-icon="mdiArrowLeft" variant="text">
           Back to Machines
         </v-btn>
         <v-alert type="warning" class="mt-4">

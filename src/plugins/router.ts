@@ -3,81 +3,39 @@
 
 import { createWebHistory, createRouter } from 'vue-router'
 
-import About from '@/components/About.vue'
-import AddCustomAuth from '../components/logins/AddCustomAuth.vue'
-import AdminUsers from '@/components/users/AdminUsers.vue'
-import Approvals from '@/components/Approvals.vue'
-import Apps from '@/components/Apps.vue'
-import ConfirmSession from '@/components/logins/ConfirmSession.vue'
-import CustomAuth from '@/components/logins/CustomAuth.vue'
-import Dashboard from '@/components/Dashboard.vue'
-import DeleteAccount from '@/components/settings/DeleteAccount.vue'
-import Devices from '@/components/Devices.vue'
-import DeviceApprovals from '@/components/approvals/DeviceApprovals.vue'
-import Labels from '@/components/Labels.vue'
-import Login from '@/components/Login.vue'
-import LoginApproval from '@/components/logins/LoginApproval.vue'
-import LoginError from '@/components/logins/LoginError.vue'
-import NoService from '@/components/NoService.vue'
-import OauthSuccess from '@/components/logins/OauthSuccess.vue'
-import Policies from '@/components/Policies.vue'
-import PrivacyPolicy from '@/components/terms/PrivacyPolicy.vue'
-import QRCodeSignIn from '@/components/logins/QRCodeSignIn.vue'
-import RegularUsers from '@/components/users/RegularUsers.vue'
-import SignUp from '@/components/SignUp.vue'
-import SupervisorFwConfigs from '@/components/supervisor/SupervisorFwConfigs.vue'
-import SupervisorPops from '@/components/supervisor/SupervisorPops.vue'
-import SupervisorNamespaceInstances from '@/components/supervisor/SupervisorNamespaceInstances.vue'
-import SupervisorWgNodes from '@/components/supervisor/SupervisorWgNodes.vue'
-import Tenants from '@/components/Tenants.vue'
-import TenantApprovals from '@/components/approvals/TenantApprovals.vue'
-import TermsOfService from '@/components/terms/TermsOfService.vue'
-import UserApprovals from '@/components/approvals/UserApprovals.vue'
-import Users from '@/components/Users.vue'
-import VpnApiKeys from '@/components/vpn/VpnApiKeys.vue'
-import VpnNodes from '@/components/vpn/VpnNodes.vue'
-import VpnNodeDetails from '@/components/vpn/VpnNodeDetails.vue'
-import VpnPreAuthKeys from '@/components/vpn/VpnPreAuthKeys.vue'
-import VpnRoutes from '@/components/vpn/VpnRoutes.vue'
-import VpnUserKeys from '@/components/vpn/VpnUserKeys.vue'
-import VpnUsers from '@/components/vpn/VpnUsers.vue'
-import WebPrivacyPolicy from '@/components/terms/WebPrivacyPolicy.vue'
-import WgDevices from '@/components/vpn/WgDevices.vue'
-import WgNodes from '@/components/vpn/WgNodes.vue'
-import VpnWgServers from '@/components/vpn/VpnWgServers.vue'
+// Components are lazy-loaded in route definitions below to enable code-splitting.
 import { useUserStore } from '@/stores/user'
-import AddCustomAuthSuccess from '@/components/logins/AddCustomAuthSuccess.vue'
 
 const routes = [
-  { path: '/', component: Dashboard, meta: { requiresAuth: true } },
-  { path: '/about', component: About },
-  { path: '/add-custom-auth', component: AddCustomAuth },
-  { path: '/add-custom-auth-success', component: AddCustomAuthSuccess, meta: { requiresAuth: true } },
-  { path: '/admin-users', component: AdminUsers },
-  { path: '/approvals', component: Approvals, meta: { requiresAuth: true } },
-  { path: '/apps', component: Apps, meta: { requiresAuth: true } },
-  { path: '/confirm-session', component: ConfirmSession, meta: { requiresAuth: true } },
-  { path: '/custom-auth-providers', component: CustomAuth, meta: { requiresAuth: true } },
-  { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
-  { path: '/delete-account', component: DeleteAccount, meta: { requiresAuth: true } },
+  { path: '/', component: () => import('@/components/vpn/VpnNodes.vue'), meta: { requiresAuth: true } },
+  { path: '/about', component: () => import('@/components/About.vue') },
+  { path: '/add-custom-auth', component: () => import('@/components/logins/AddCustomAuth.vue') },
+  { path: '/add-custom-auth-success', component: () => import('@/components/logins/AddCustomAuthSuccess.vue'), meta: { requiresAuth: true } },
+  { path: '/admin-users', component: () => import('@/components/users/AdminUsers.vue') },
+  { path: '/approvals', component: () => import('@/components/Approvals.vue'), meta: { requiresAuth: true } },
+  { path: '/apps', component: () => import('@/components/Apps.vue'), meta: { requiresAuth: true } },
+  { path: '/confirm-session', component: () => import('@/components/logins/ConfirmSession.vue'), meta: { requiresAuth: true } },
+  { path: '/custom-auth-providers', component: () => import('@/components/logins/CustomAuth.vue'), meta: { requiresAuth: true } },
+  { path: '/dashboard', component: () => import('@/components/Dashboard.vue'), meta: { requiresAuth: true } },
+  { path: '/delete-account', component: () => import('@/components/settings/DeleteAccount.vue'), meta: { requiresAuth: true } },
   {
     path: '/delete-account-with-login',
     name: "delete-account-with-login",
-    component: Login,
+    component: () => import('@/components/Login.vue'),
     props: (route: any) => ({
       redirect: '/delete-account',
     })
   },
-  { path: '/devices', component: Devices, meta: { requiresAuth: true } },
+  { path: '/devices', component: () => import('@/components/Devices.vue'), meta: { requiresAuth: true } },
   {
     path: '/device-approvals',
-    component: DeviceApprovals,
+    component: () => import('@/components/approvals/DeviceApprovals.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/labels', component: Labels, meta: { requiresAuth: true } },
+  { path: '/labels', component: () => import('@/components/Labels.vue'), meta: { requiresAuth: true } },
   {
     path: '/login/:sessionID?',
-    component: Login,
+    component: () => import('@/components/Login.vue'),
     props: (route: any) => ({
       sessionID: route.params.sessionID,
       redirect: route.query.redirect,
@@ -86,7 +44,7 @@ const routes = [
   {
     path: '/invite',
     name: 'invite',
-    component: Login,
+    component: () => import('@/components/Login.vue'),
     props: (route: any) => ({
       inviteCode: route.query.code,
     })
@@ -94,7 +52,7 @@ const routes = [
   {
     path: '/303/login/approval',
     name: 'login-approval',
-    component: LoginApproval,
+    component: () => import('@/components/logins/LoginApproval.vue'),
     props: (route: any) => ({
       approvalState: route.query.state,
     })
@@ -102,91 +60,91 @@ const routes = [
   {
     path: '/303/login/error',
     name: 'login-error',
-    component: LoginError,
+    component: () => import('@/components/logins/LoginError.vue'),
     props: (route: any) => ({
       error: route.query.error,
     })
   },
-  { path: '/no-service', component: NoService },
+  { path: '/no-service', component: () => import('@/components/NoService.vue') },
   {
     path: '/oauth-success/:sessionID?',
     name: 'oauth-success',
-    component: OauthSuccess,
+    component: () => import('@/components/logins/OauthSuccess.vue'),
     props: (route: any) => ({
       sessionID: route.params.sessionID,
       redirect: route.query.redirect,
       inviteCode: route.query.inviteCode,
     })
   },
-  { path: '/policies', component: Policies, meta: { requiresAuth: true } },
-  { path: '/privacy-policy', component: PrivacyPolicy },
-  { path: '/regular-users', component: RegularUsers, meta: { requiresAuth: true } },
-  { path: '/qr-code-sign-in/:url', component: QRCodeSignIn, meta: { requiresAuth: false }, props: true },
-  { path: '/signup', component: SignUp },
-  { path: '/tenants', component: Tenants, meta: { requiresAuth: true } },
+  { path: '/policies', component: () => import('@/heavy/Policies.vue'), meta: { requiresAuth: true } },
+  { path: '/privacy-policy', component: () => import('@/components/terms/PrivacyPolicy.vue') },
+  { path: '/regular-users', component: () => import('@/components/users/RegularUsers.vue'), meta: { requiresAuth: true } },
+  { path: '/qr-code-sign-in/:url', component: () => import('@/components/logins/QRCodeSignIn.vue'), meta: { requiresAuth: false }, props: true },
+  { path: '/signup', component: () => import('@/components/SignUp.vue') },
+  { path: '/tenants', component: () => import('@/components/Tenants.vue'), meta: { requiresAuth: true } },
   {
     path: '/tenant-approvals',
-    component: TenantApprovals,
+    component: () => import('@/components/approvals/TenantApprovals.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/terms-of-service', component: TermsOfService },
+  { path: '/terms-of-service', component: () => import('@/components/terms/TermsOfService.vue') },
   {
     path: '/user-approvals',
-    component: UserApprovals,
+    component: () => import('@/components/approvals/UserApprovals.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/users', component: Users, meta: { requiresAuth: true } },
+  { path: '/users', component: () => import('@/components/Users.vue'), meta: { requiresAuth: true } },
   {
     path: '/ui/sup/fws',
-    component: SupervisorFwConfigs,
+    component: () => import('@/components/supervisor/SupervisorFwConfigs.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/ui/sup/wgs',
-    component: SupervisorWgNodes,
+    component: () => import('@/components/supervisor/SupervisorWgNodes.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/ui/sup/pops',
-    component: SupervisorPops,
+    component: () => import('@/components/supervisor/SupervisorPops.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/ui/sup/namespace-instances',
-    component: SupervisorNamespaceInstances,
+    component: () => import('@/components/supervisor/SupervisorNamespaceInstances.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/ui/vpn-api-keys',
-    component: VpnApiKeys,
+    component: () => import('@/components/vpn/VpnApiKeys.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/ui/vpn-nodes', component: VpnNodes, meta: { requiresAuth: true } },
-  { path: '/ui/vpn-node-details', component: VpnNodeDetails, meta: { requiresAuth: true } },
+  { path: '/ui/vpn-nodes', component: () => import('@/components/vpn/VpnNodes.vue'), meta: { requiresAuth: true } },
+  { path: '/ui/vpn-node-details', component: () => import('@/components/vpn/VpnNodeDetails.vue'), meta: { requiresAuth: true } },
   {
     path: '/ui/vpn-pre-auth-keys',
-    component: VpnPreAuthKeys,
+    component: () => import('@/components/vpn/VpnPreAuthKeys.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/ui/vpn-routes', component: VpnRoutes, meta: { requiresAuth: true } },
-  { path: '/ui/vpn-user-keys', component: VpnUserKeys, meta: { requiresAuth: true } },
-  { path: '/ui/vpn-users', component: VpnUsers, meta: { requiresAuth: true } },
+  { path: '/ui/vpn-routes', component: () => import('@/components/vpn/VpnRoutes.vue'), meta: { requiresAuth: true } },
+  { path: '/ui/vpn-user-keys', component: () => import('@/components/vpn/VpnUserKeys.vue'), meta: { requiresAuth: true } },
+  { path: '/ui/vpn-users', component: () => import('@/components/vpn/VpnUsers.vue'), meta: { requiresAuth: true } },
   {
     path: '/ui/vpn-wg-devices',
-    component: WgDevices,
+    component: () => import('@/components/vpn/WgDevices.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/ui/vpn-wg-nodes',
-    component: WgNodes,
+    component: () => import('@/components/vpn/WgNodes.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/ui/vpn-wg-servers',
-    component: VpnWgServers,
+    component: () => import('@/components/vpn/VpnWgServers.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/web-privacy-policy', component: WebPrivacyPolicy },
+  { path: '/web-privacy-policy', component: () => import('@/components/terms/WebPrivacyPolicy.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
@@ -209,6 +167,13 @@ router.beforeEach((to, from) => {
     console.log("setting query to ", to.query)
     return {
       path: '/ui/vpn-nodes',
+      query: to.query
+    }
+  }
+  if (to.path == '/' && store.isAdmin) {
+    console.log("setting query to ", to.query)
+    return {
+      path: '/dashboard',
       query: to.query
     }
   }

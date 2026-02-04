@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { mdiAlertCircleOutline } from '@mdi/js'
 import { useDisplay } from 'vuetify'
 
 const { mdAndUp } = useDisplay()
@@ -61,7 +62,7 @@ function click(ok: boolean) {
         <slot name="item"></slot>
       </v-card-item>
       <template v-slot:prepend>
-        <v-icon color="primary" icon="mdi-alert-circle-outline"></v-icon>
+        <v-icon color="primary" :icon="mdiAlertCircleOutline"></v-icon>
       </template>
       <template v-slot:actions>
         <v-row class="mx-4 mb-4" justify="end">

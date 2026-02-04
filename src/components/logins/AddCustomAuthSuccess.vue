@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { mdiOpenid } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useLoginStore } from '@/stores/login'
 import { shortString } from '@/plugins/utils'
@@ -29,7 +30,8 @@ const providerTable = computed(() => {
 <template>
   <v-container>
     <p class="text-h5">
-      <v-icon class="me-2">mdi-openid</v-icon>Custom OIDC added successfully
+      <v-icon class="me-2" :icon="mdiOpenid"></v-icon>Custom OIDC added
+      successfully
     </p>
 
     <p class="my-4">

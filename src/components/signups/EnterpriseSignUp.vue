@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { mdiChevronRight } from '@mdi/js'
 import { VForm } from 'vuetify/components'
 import { TenantApproval } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
@@ -80,7 +81,7 @@ async function signUp() {
     <v-row class="mx-2 my-6" justify="end">
       <v-btn :disabled="!ready" color="success" variant="tonal" @click="signUp">
         Submit Registration
-        <v-icon icon="mdi-chevron-right" end></v-icon>
+        <v-icon :icon="mdiChevronRight" end></v-icon>
       </v-btn>
     </v-row>
   </v-sheet>

@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { newToast } from '@/plugins/toast'
+import { mdiContentCopy } from '@mdi/js'
 const emit = defineEmits(['click'])
 const props = defineProps<{text: string, showToast?: boolean}>()
 function click() {
@@ -26,7 +27,7 @@ function click() {
       <v-btn
         class="mx-1"
         v-bind="props"
-        icon="mdi-content-copy"
+        :icon="mdiContentCopy"
         size="small"
         variant="plain"
         @click="click"

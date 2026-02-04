@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { mdiDeleteOutline } from '@mdi/js'
 defineProps(['addNote', 'confirmDeleteText', 'okDeleteDisabled', 'title'])
 const emit = defineEmits(['delete', 'pre-delete'])
 const note = defineModel<string>('note')
@@ -23,7 +24,7 @@ function okDelete() {
     <template v-slot:activator="{ props }">
       <v-btn
         v-bind="props"
-        icon=" mdi-delete-outline"
+        :icon="mdiDeleteOutline"
         color="red"
         size="small"
         variant="plain"

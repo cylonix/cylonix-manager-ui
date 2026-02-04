@@ -4,9 +4,9 @@
 -->
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
-import { UserInvite } from '@/clients/manager/api'
+import { User, UserInvite } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, userAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
@@ -15,34 +15,16 @@ import { shortUUID } from '@/plugins/utils'
 
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
-const { isAdmin } = storeToRefs(useUserStore())
-
+import { useNodesStore } from '@/stores/nodes'
+const { isAdmin, isSysAdmin, isNetworkAdmin } = storeToRefs(useUserStore())
+const nodesStore = useNodesStore()
 const { smAndUp } = useDisplay()
-const xsHeaders = ref([
-  { title: 'To', key: 'emails', value: (item: any) => showEmails(item.emails) },
-  {
-    title: 'Role',
-    key: 'role',
-    value: (item: any) => (item.role ? item.role : 'Member'),
-  },
-  { title: 'Actions', key: 'actions', align: 'center', sortable: false },
-] as const)
 
-const headers = ref([
-  { title: 'From', key: 'invitedBy.displayName' },
-  { title: 'To', key: 'emails', value: (item: any) => showEmails(item.emails) },
-  {
-    title: 'Role',
-    key: 'role',
-    value: (item: any) => (item.role ? item.role : 'Member'),
-  },
-  {
-    title: 'Invited at',
-    key: 'createdAt',
-    value: (item: any) => shortTs(item.createdAt),
-  },
-  { title: 'Actions', key: 'actions', align: 'center', sortable: false },
-] as const)
+onMounted(async () => {
+  if (!isAdmin.value) {
+    await loadAllUsers()
+  }
+})
 
 function showEmails(emails: string[]): string {
   if (emails.length === 0) {
@@ -57,12 +39,102 @@ function showEmails(emails: string[]): string {
   return emails[0] + ` (+${emails.length - 1} more)`
 }
 
-const adminViewHeaders = ref([
-  { title: 'ID', key: 'id', value: (item: any) => shortUUID(item.id) },
-  { title: 'Enterprise ID', key: 'namespace' },
-  { title: 'Network', key: 'networkDomain' },
-  ...headers.value,
-] as const)
+const getHeaders = computed(() => {
+  var h = <
+    {
+      title: string
+      key: string
+      value?: ((item: any) => string | undefined) | string
+      align?: 'center' | 'start' | 'end' | undefined
+      sortable?: boolean
+    }[]
+  >[
+    {
+      title: 'To',
+      key: 'emails',
+      value: (item: any) => showEmails(item.emails),
+    },
+    { title: 'For', key: 'for' },
+  ]
+  if (!smAndUp.value) {
+    return [
+      ...h,
+      {
+        title: 'Actions',
+        key: 'actions',
+        align: 'center' as const,
+        sortable: false,
+      },
+    ]
+  }
+  h = [
+    ...h,
+    {
+      title: 'Invited at',
+      key: 'createdAt',
+      value: (item: any) => shortTs(item.createdAt),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      align: 'center' as const,
+      sortable: false,
+    },
+  ]
+
+  if (isAdmin.value) {
+    h = [
+      { title: 'ID', key: 'id', value: (item: any) => shortUUID(item.id) },
+      { title: 'Network', key: 'networkDomain' },
+      ...h,
+    ]
+  }
+  if (isSysAdmin.value) {
+    h = [
+      { title: 'ID', key: 'id', value: (item: any) => shortUUID(item.id) },
+      { title: 'Enterprise ID', key: 'namespace' },
+      { title: 'Network', key: 'networkDomain' },
+      { title: 'From', key: 'invitedBy.displayName' },
+      ...h,
+    ]
+  } else if (isAdmin.value) {
+    ;[
+      { title: 'ID', key: 'id', value: (item: any) => shortUUID(item.id) },
+      { title: 'Network', key: 'networkDomain' },
+      { title: 'From', key: 'invitedBy.displayName' },
+      ...h,
+    ]
+  } else if (allUsers.value.length > 1) {
+    h = [{ title: 'From', key: 'invitedBy.displayName' }, ...h]
+  }
+  return h
+})
+
+const allUsers = ref<User[]>([])
+async function loadAllUsers(forceRefresh = false) {
+  if (isSysAdmin.value || (!isAdmin.value && !isNetworkAdmin.value)) {
+    // Don't load users if not a (network) admin or sysadmin
+    return
+  }
+
+  // Check if we already have valid cached data
+  if (nodesStore.isAllUsersValid() && !forceRefresh) {
+    console.log('Using cached allUsers data')
+    return
+  }
+
+  loading.value = true
+  const ret = await tryRequest(async () => {
+    const ret = await userAPI.getUserList([])
+    nodesStore.setAllUsers(ret?.data.users ?? [])
+    console.log('users:', allUsers.value, ret?.data)
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  console.log('Done loading all users.')
+  loading.value = false
+}
 
 const alert = ref<Alert>({ on: false })
 const itemsPerPage = ref(10)
@@ -151,7 +223,7 @@ function confirmDeleteText(item: UserInvite): string {
   <v-data-table-server
     v-model:items-per-page="itemsPerPage"
     class="mt-2"
-    :headers="isAdmin ? adminViewHeaders : smAndUp ? headers : xsHeaders"
+    :headers="getHeaders"
     :hide-default-footer="itemsPerPage >= totalItems"
     :items="serverItems"
     :items-length="totalItems"
@@ -166,6 +238,12 @@ function confirmDeleteText(item: UserInvite): string {
         @delete="deleteItem(item)"
       >
       </DeleteButton>
+    </template>
+    <template v-slot:item.for="{ item }">
+      {{ item.shareNodeName ? 'sharing ' : 'as ' }}
+      <span class="font-weight-bold text-blue-darken-2">
+        {{ item.shareNodeName ? item.shareNodeName : item.role }}</span
+      >
     </template>
   </v-data-table-server>
 </template>

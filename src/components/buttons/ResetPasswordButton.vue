@@ -4,6 +4,7 @@
 -->
 
 <script setup lang="ts">
+import { mdiKeyChange } from '@mdi/js'
 const emit = defineEmits(['click'])
 function click() {
   emit('click')
@@ -15,7 +16,7 @@ function click() {
       <v-btn
         class="mx-1"
         v-bind="props"
-        icon="mdi-key-change"
+        :icon="mdiKeyChange"
         size="small"
         variant="plain"
         @click="click"

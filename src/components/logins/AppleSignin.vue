@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import type { Alert } from '@/plugins/alert'
 import { loginAPI, tryRequest } from '@/plugins/api'
 import getEnv from '@/utils/env'
+import { mdiApple } from '@mdi/js'
 
 const theme = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)
@@ -58,8 +59,7 @@ async function loginWithApple() {
     <div class="apple-button-state"></div>
     <div class="apple-button-content-wrapper">
       <div class="apple-button-icon">
-        <v-icon :color="isDark ? 'white' : 'black'" size="24">
-          mdi-apple
+        <v-icon :color="isDark ? 'white' : 'black'" size="24" :icon="mdiApple">
         </v-icon>
       </div>
       <span class="apple-button-contents">Sign in with Apple</span>

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 .PHONY: build docker
-RELEASE?=v2.1.4
+RELEASE?=v2.1.6
 VERSION:=$(shell git describe --tags --exact-match 2> /dev/null || \
 				git rev-parse --short HEAD || echo "unknown")
 

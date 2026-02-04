@@ -4,6 +4,7 @@
 -->
 
 <script setup lang="ts">
+import { mdiDotsHorizontal } from '@mdi/js'
 const emit = defineEmits(['click'])
 function click() {
   emit('click')
@@ -15,7 +16,7 @@ function click() {
       <v-btn
         class="mx-1"
         v-bind="props"
-        icon="mdi-dots-horizontal"
+        :icon="mdiDotsHorizontal"
         size="small"
         variant="text"
         @click="click"

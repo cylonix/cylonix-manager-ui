@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { mdiContentCopy } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
@@ -194,10 +195,11 @@ function done() {
             <div class="d-flex align-center">
               <code class="text-body-1 flex-grow-1">{{ generatedKey }}</code>
               <v-btn
-                icon="mdi-content-copy"
+                :icon="mdiContentCopy"
                 variant="text"
                 @click="copyKey"
-              ></v-btn>
+                aria-label="Copy generated key"
+              />
             </div>
           </v-sheet>
 

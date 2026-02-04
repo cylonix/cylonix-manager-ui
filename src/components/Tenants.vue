@@ -12,6 +12,7 @@ import { tenantAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { useTenantsStore } from '@/stores/tenants'
 import { useUserStore } from '@/stores/user'
+import { mdiCheck } from '@mdi/js'
 
 const { isSysAdmin } = storeToRefs(useUserStore())
 const tenantsCache = useTenantsStore()
@@ -132,13 +133,13 @@ async function deleteTenant(item: TenantConfig) {
         <ShortenTextChip :text="item.id" />
       </template>
       <template v-slot:item.welcome-email-sent="{ item }">
-        <v-icon v-if="item.welcomeEmailSent" color="green">mdi-check</v-icon>
+        <v-icon v-if="item.welcomeEmailSent" color="green">{{ mdiCheck }}</v-icon>
       </template>
       <template v-slot:item.auto-approve-device="{ item }">
-        <v-icon v-if="item.autoApproveDevice" color="purple">mdi-check</v-icon>
+        <v-icon v-if="item.autoApproveDevice" color="purple">{{ mdiCheck }}</v-icon>
       </template>
       <template v-slot:item.auto-accept-routes="{ item }">
-        <v-icon v-if="item.autoAcceptRoutes" color="red">mdi-check</v-icon>
+        <v-icon v-if="item.autoAcceptRoutes" color="red">{{ mdiCheck }}</v-icon>
       </template>
       <template v-if="isSysAdmin" v-slot:item.actions="{ item }">
         <DeleteButton

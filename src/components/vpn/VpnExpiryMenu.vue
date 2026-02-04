@@ -10,6 +10,7 @@ defineProps<{
   withPrefix?: boolean
   disabled?: boolean
 }>()
+import { mdiCancel, mdiCalendarClock, mdiClockAlert } from '@mdi/js'
 const emit = defineEmits([
   'set',
   'disable',
@@ -53,13 +54,13 @@ function expiryState(expiry: string | undefined): string {
         @click="emit('disable')"
       >
         <v-list-item-title>
-          <v-icon class="mr-2">mdi-cancel</v-icon>
+          <v-icon class="mr-2" :icon="mdiCancel" />
           Disable Expiry
         </v-list-item-title>
       </v-list-item>
       <v-list-item @click="emit('set')">
         <v-list-item-title>
-          <v-icon class="mr-2">mdi-calendar-clock</v-icon>
+          <v-icon class="mr-2" :icon="mdiCalendarClock" />
           Set Expiry Time
         </v-list-item-title>
       </v-list-item>
@@ -68,7 +69,7 @@ function expiryState(expiry: string | undefined): string {
         @click="emit('now')"
       >
         <v-list-item-title>
-          <v-icon class="mr-2">mdi-clock-alert</v-icon>
+          <v-icon class="mr-2" :icon="mdiClockAlert" />
           Expire Now
         </v-list-item-title>
       </v-list-item>

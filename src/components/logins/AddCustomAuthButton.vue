@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTheme } from 'vuetify'
+import { mdiOpenid } from '@mdi/js'
 
 const theme = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)
@@ -25,8 +26,7 @@ async function addCustomAuth() {
     <div class="login-button-state"></div>
     <div class="login-button-content-wrapper">
       <div class="login-button-icon">
-        <v-icon :color="isDark ? 'white' : 'black'" size="24">
-          mdi-openid
+        <v-icon :color="isDark ? 'white' : 'black'" size="24" :icon="mdiOpenid">
         </v-icon>
       </div>
       <span class="login-button-contents">Add Custom OIDC Sign-In</span>

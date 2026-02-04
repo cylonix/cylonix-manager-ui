@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # build stage
-FROM node:20.0.0 AS build-stage
+FROM node:24.13.0 AS build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -13,7 +13,7 @@ RUN npm run build
 FROM nginx:stable-alpine AS production-stage
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# autorun scripts goes to /docker-entrypoint.d
+# auto-run scripts goes to /docker-entrypoint.d
 COPY entrypoint.sh /docker-entrypoint.d
 COPY lb.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80

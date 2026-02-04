@@ -4,6 +4,7 @@
 -->
 
 <script setup lang="ts">
+import { mdiNote } from '@mdi/js'
 defineProps(['label'])
 const emit = defineEmits(['change'])
 const note = defineModel<string>()
@@ -13,7 +14,7 @@ const note = defineModel<string>()
     autocomplete="note"
     clearable
     density="compact"
-    prepend-inner-icon="mdi-note"
+    :prepend-inner-icon="mdiNote"
     :label="label ?? 'Note'"
     v-model="note"
     @update:model-value="emit('change')"

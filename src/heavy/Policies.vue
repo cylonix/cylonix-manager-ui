@@ -8,13 +8,34 @@ import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import { parse as parseJsonc } from 'jsonc-parser'
 import { storeToRefs } from 'pinia'
-import * as monaco from 'monaco-editor'
 import { V1Node } from '@/clients/headscale/api'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { usePolicyStore } from '@/stores/policy'
 import { useUserStore } from '@/stores/user'
+import {
+  mdiWhiteBalanceSunny,
+  mdiMoonWaningCrescent,
+  mdiPencil,
+  mdiFileCompare,
+  mdiUndo,
+  mdiContentSave,
+} from '@mdi/js'
+
+import * as monaco from 'monaco-editor'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+
+// @ts-ignore
+self.MonacoEnvironment = {
+  getWorker(_: any, label: string) {
+    if (label === 'json') {
+      return new jsonWorker();
+    }
+    return new editorWorker();
+  },
+};
 
 // Do not use ref for this. It will cause the editor to freeze.
 // https://github.com/microsoft/monaco-editor/issues/3154
@@ -419,12 +440,11 @@ onBeforeUnmount(() => {
                   isDarkTheme ? 'Switch to Light Theme' : 'Switch to Dark Theme'
                 "
               >
-                <v-icon>
-                  {{
-                    isDarkTheme
-                      ? 'mdi-white-balance-sunny'
-                      : 'mdi-moon-waning-crescent'
-                  }}
+                <v-icon
+                  :icon="
+                    isDarkTheme ? mdiWhiteBalanceSunny : mdiMoonWaningCrescent
+                  "
+                >
                 </v-icon>
               </v-btn>
               <v-btn
@@ -433,7 +453,7 @@ onBeforeUnmount(() => {
                 class="mr-2"
                 :disabled="!isPolicyDifferentThanSaved"
                 @click="toggleDiffView"
-                :prepend-icon="showDiff ? 'mdi-pencil' : 'mdi-file-compare'"
+                :prepend-icon="showDiff ? mdiPencil : mdiFileCompare"
               >
                 {{ showDiff ? 'Back to Editor' : 'View Diff' }}
               </v-btn>
@@ -443,7 +463,7 @@ onBeforeUnmount(() => {
                 class="mr-2"
                 :disabled="!isPolicyDifferentThanSaved"
                 @click="discardChanges"
-                prepend-icon="mdi-undo"
+                :prepend-icon="mdiUndo"
               >
                 Discard Changes
               </v-btn>
@@ -451,7 +471,7 @@ onBeforeUnmount(() => {
                 color="primary"
                 :loading="loading"
                 @click="savePolicy"
-                prepend-icon="mdi-content-save"
+                :prepend-icon="mdiContentSave"
               >
                 Save Policy
               </v-btn>

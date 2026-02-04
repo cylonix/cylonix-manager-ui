@@ -11,6 +11,7 @@ import type { Alert } from '@/plugins/alert'
 import { labelAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
+import { mdiStar } from '@mdi/js'
 
 const headers = ref([
   { title: 'Enterprise ID', key: 'namespace' },
@@ -149,7 +150,7 @@ function addButtonClicked() {
         <v-avatar :color="item.color"></v-avatar>
       </template>
       <template v-slot:item.star="{ item }">
-        <v-icon v-if="item.star" color="green" icon="mdi-star"></v-icon>
+        <v-icon v-if="item.star" color="green" :icon="mdiStar"></v-icon>
       </template>
       <template v-slot:item.actions="{ item }">
         <DeleteButton

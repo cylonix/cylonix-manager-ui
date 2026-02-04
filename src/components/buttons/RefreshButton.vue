@@ -5,15 +5,16 @@
 
 <script setup lang="ts">
 defineProps(['color', 'loading', 'size'])
+import { mdiRefresh } from '@mdi/js'
 const emit = defineEmits(['refresh'])
 </script>
 <template>
-  <v-btn
+    <v-btn
     :size="size"
     :loading="loading"
     variant="plain"
     @click="emit('refresh')"
   >
-    <v-icon :color="color"> mdi-refresh </v-icon>
+    <v-icon :color="color" :icon="mdiRefresh" />
   </v-btn>
 </template>

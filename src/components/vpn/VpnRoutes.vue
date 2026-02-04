@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { mdiCheck } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { decamelize } from '@cylonix/humps'
 import { V1Route } from '@/clients/headscale/api'
@@ -161,13 +162,13 @@ function confirmDeleteText(item: V1Route): string {
       </template>
 
       <template v-slot:item.advertised="{ item }">
-        <v-icon v-if="item.advertised" color="green">mdi-check</v-icon>
+        <v-icon v-if="item.advertised" color="green" :icon="mdiCheck" />
       </template>
       <template v-slot:item.enabled="{ item }">
-        <v-icon v-if="item.enabled" color="green">mdi-check</v-icon>
+        <v-icon v-if="item.enabled" color="green" :icon="mdiCheck" />
       </template>
       <template v-slot:item.primary="{ item }">
-        <v-icon v-if="item.isPrimary" color="green">mdi-check</v-icon>
+        <v-icon v-if="item.isPrimary" color="green" :icon="mdiCheck" />
       </template>
       <template v-slot:item.actions="{ item }">
         <DeleteButton

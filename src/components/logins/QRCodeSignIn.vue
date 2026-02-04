@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { mdiArrowLeft } from '@mdi/js'
 import { useQRCode } from '@vueuse/integrations/useQRCode'
 
 const props = defineProps<{
@@ -31,7 +32,7 @@ function goBack() {
   <div class="mt-4 qr-signin">
     <v-sheet class="mx-auto my-4 pa-3" rounded>
       <v-chip variant="plain" class="my-4" @click="goBack">
-        <v-icon icon="mdi-arrow-left" start></v-icon>
+        <v-icon :icon="mdiArrowLeft" start></v-icon>
         Back</v-chip
       >
       <div class="my-4 text-center">

@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { mdiChevronRight } from '@mdi/js'
 import { VForm } from 'vuetify/components'
 
 const code = ref()
@@ -19,7 +20,15 @@ const ready = computed(() => {
   return isFormValid.value
 })
 
-async function signUp() {}
+async function signUp() {
+  if (form.value) {
+    const valid = await form.value.validate()
+    if (!valid) {
+      return
+    }
+  }
+  // Submit the sign-up data
+}
 </script>
 <template>
   <v-sheet class="mx-auto px-2 py-2" max-width="1000">
@@ -45,7 +54,7 @@ async function signUp() {}
         @click="signUp"
       >
         Submit Registration
-        <v-icon icon="mdi-chevron-right" end></v-icon>
+        <v-icon :icon="mdiChevronRight" end></v-icon>
       </v-btn>
     </v-row>
   </v-sheet>
