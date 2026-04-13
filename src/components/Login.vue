@@ -339,9 +339,11 @@ function qrCodeSignIn() {
 }
 
 onMounted(() => {
-  // Reset user store state when login component mounts
-  userStore.$reset()
-  nodesStore.$reset()
+  // Reset user store state when login component mounts (only if previously logged in)
+  if (userStore.loggedIn) {
+    userStore.$reset()
+    nodesStore.$reset()
+  }
 })
 </script>
 

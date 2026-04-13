@@ -1,7 +1,7 @@
 // Copyright (c) EZBLOCK INC. & AUTHORS
 // SPDX-License-Identifier: BSD-3-Clause
 
-import axios, { AxiosError } from 'axios'
+import axios, { AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
 import { HttpStatusCode } from 'axios'
 import {
   BadRequest,
@@ -39,7 +39,7 @@ export class UnauthorizedError extends Error {
   }
 }
 
-function handleError(error: any): Alert | Toast {
+function handleError(error: unknown): Alert | Toast {
   if (error instanceof UnauthorizedError) {
     return <Toast>{
       color: 'red',
@@ -57,7 +57,7 @@ function handleError(error: any): Alert | Toast {
   return <Alert>{
     on: true,
     title: 'Error!',
-    text: error.toString(),
+    text: String(error),
     type: 'error'
   }
 }
@@ -80,9 +80,10 @@ export function tryDecodeError(error: string | undefined) {
     }
   }
 }
-export async function tryRequest(fn: () => any): Promise<Alert | undefined> {
+export async function tryRequest(fn: () => Promise<unknown>): Promise<Alert | undefined> {
   try {
-    return await fn()
+    await fn()
+    return
   } catch (e) {
     const ret = handleError(e)
     if ('color' in ret) {
@@ -120,7 +121,7 @@ const instance = axios.create({
   // No options
 })
 
-instance.interceptors.request.use(function (config: any) {
+instance.interceptors.request.use(function (config: InternalAxiosRequestConfig) {
   if (config.headers['Content-Type'] === 'application/json') {
     if (config.data) {
       // Convert all api requests json data to snake_case.
@@ -134,7 +135,7 @@ instance.interceptors.request.use(function (config: any) {
 })
 
 instance.interceptors.response.use(
-  function (response: any) {
+  function (response: AxiosResponse) {
     if (
       response.data &&
       response.headers['content-type'] === 'application/json'
@@ -143,14 +144,12 @@ instance.interceptors.response.use(
     }
     return response
   },
-  function (error: any) {
-    console.log('API error:', error)
+  function (error: AxiosError) {
     if (error && error.response) {
-      console.log(error)
       // TODO: localize the error message based on the error code.
       let message = error.message
       const response = error.response
-      if (response.status == HttpStatusCode.Unauthorized) {
+      if (response.status === HttpStatusCode.Unauthorized) {
         message +=
           '. Unauthorized. Please check your login credentials and re-try.'
         const store = useUserStore()
@@ -185,24 +184,54 @@ export const userAPI = new UserApi(config, basePath, instance)
 export const wgAPI = new VpnApi(config, basePath, instance)
 export const axiosInstance = instance
 
-// Supervisor APIs
+// Supervisor APIs (lazy singletons — recreated only when API key changes)
+let _supCachedKey: string | undefined
+let _supFw: InstanceType<typeof SupFwAPI> | undefined
+let _supInstance: InstanceType<typeof SupInstanceAPI> | undefined
+let _supPop: InstanceType<typeof SupPopAPI> | undefined
+let _supResource: InstanceType<typeof SupResourceAPI> | undefined
+let _supRoute: InstanceType<typeof SupRouteAPI> | undefined
+let _supWg: InstanceType<typeof SupWgAPI> | undefined
+
+function getSupConfig() {
+  const cfg = configWithAPIKey()
+  const currentKey = cfg.apiKey as string | undefined
+  if (currentKey !== _supCachedKey) {
+    // API key changed, invalidate all cached instances
+    _supCachedKey = currentKey
+    _supFw = undefined
+    _supInstance = undefined
+    _supPop = undefined
+    _supResource = undefined
+    _supRoute = undefined
+    _supWg = undefined
+  }
+  return cfg
+}
+
 export function supFwAPI() {
-  return new SupFwAPI(configWithAPIKey(), '/supervisor/v1', instance)
+  const cfg = getSupConfig()
+  return _supFw ??= new SupFwAPI(cfg, '/supervisor/v1', instance)
 }
 export function supInstanceAPI() {
-  return new SupInstanceAPI(configWithAPIKey(), '/supervisor/v1', instance)
+  const cfg = getSupConfig()
+  return _supInstance ??= new SupInstanceAPI(cfg, '/supervisor/v1', instance)
 }
 export function supPopAPI() {
-  return new SupPopAPI(configWithAPIKey(), '/supervisor/v1', instance)
+  const cfg = getSupConfig()
+  return _supPop ??= new SupPopAPI(cfg, '/supervisor/v1', instance)
 }
 export function supResourceAPI() {
-  return new SupResourceAPI(configWithAPIKey(), '/supervisor/v1', instance)
+  const cfg = getSupConfig()
+  return _supResource ??= new SupResourceAPI(cfg, '/supervisor/v1', instance)
 }
 export function supRouteAPI() {
-  return new SupRouteAPI(configWithAPIKey(), '/supervisor/v1', instance)
+  const cfg = getSupConfig()
+  return _supRoute ??= new SupRouteAPI(cfg, '/supervisor/v1', instance)
 }
 export function supWgAPI() {
-  return new SupWgAPI(configWithAPIKey(), '/supervisor/v1', instance)
+  const cfg = getSupConfig()
+  return _supWg ??= new SupWgAPI(cfg, '/supervisor/v1', instance)
 }
 
 // Headscale APIs
@@ -217,7 +246,7 @@ export function parseNodeHealth(health: string | null): NodeHealth | undefined {
     return undefined
   }
   try {
-    var parsed = JSON.parse(health)
+    const parsed = JSON.parse(health)
     parsed.Error = parsed.Error.replace("Tailscale ", '❌ ')
     const s = JSON.stringify(decamelizeKeys(parsed))
     const ret = JSON.parse(s) as NodeHealth

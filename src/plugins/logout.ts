@@ -15,20 +15,19 @@ export async function logout(ignoreErrors = false) {
   userStore.$reset()
   noticeStore.$reset()
   const ret = await tryRequest(async () => {
-    let e1, e2
+    const errors: Error[] = []
     try {
       await loginAPI.logout()
     } catch (e) {
-      e1 = e
+      errors.push(e instanceof Error ? e : new Error(String(e)))
     }
     try {
       await vpnAPI.headscaleServiceDeleteApiKey("")
-      console.log("delete api key succeeded")
     } catch (e) {
-      e2 = e
+      errors.push(e instanceof Error ? e : new Error(String(e)))
     }
-    if (e1 || e2) {
-      throw `${e1} ${e2}`
+    if (errors.length > 0) {
+      throw new Error(errors.map(e => e.message).join('; '))
     }
   })
   if (ret && !ignoreErrors) {

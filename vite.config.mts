@@ -141,6 +141,9 @@ export default ({ mode }) => {
         '.vue',
       ],
     },
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     build: {
       rollupOptions: {
         output: {

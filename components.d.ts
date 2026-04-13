@@ -87,6 +87,7 @@ declare module 'vue' {
     NamespaceWithTabsInput: typeof import('./src/components/inputs/NamespaceWithTabsInput.vue')['default']
     NoService: typeof import('./src/components/NoService.vue')['default']
     NoteInput: typeof import('./src/components/inputs/NoteInput.vue')['default']
+    NotFound: typeof import('./src/components/NotFound.vue')['default']
     NoticeTable: typeof import('./src/components/alerts/NoticeTable.vue')['default']
     OauthSuccess: typeof import('./src/components/logins/OauthSuccess.vue')['default']
     PasswordInput: typeof import('./src/components/inputs/PasswordInput.vue')['default']

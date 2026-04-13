@@ -7,10 +7,9 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PopConfigOutput as PopConfig } from '@/clients/supervisor/api'
-import type { Alert } from '@/plugins/alert'
-import { tryRequest, supPopAPI } from '@/plugins/api'
+import { supPopAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
-//import { newToast } from '@/plugins/toast'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -38,17 +37,38 @@ const headers = ref([
 ] as const)
 
 const addPopDialog = ref(false)
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<PopConfig[]>([])
-const totalItems = ref(0)
 
 const store = useUserStore()
 const { isSysAdmin } = storeToRefs(store)
+
+const {
+  alert,
+  hideFooter,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<PopConfig>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options }) => {
+    if (!isSysAdmin.value) {
+      throw new Error('Operation is only allowed for system administrators.')
+    }
+    const ret = await supPopAPI().getPopList(
+      undefined,
+      options.page,
+      options.itemsPerPage
+    )
+    return {
+      items: ret?.data.popList ?? [],
+      total: ret?.data.count ?? 0,
+    }
+  },
+})
 
 async function deleteItem(item: PopConfig) {
   if (!isSysAdmin.value) {
@@ -58,48 +78,8 @@ async function deleteItem(item: PopConfig) {
     }
     return
   }
+  // TODO: implement delete
   loading.value = true
-  /*const ret = await tryRequest(async () => {
-        await supPopAPI().deletePop(item.id ?? '')
-        await loadItems(loadOptions.value)
-        newToast({
-            on: true,
-            color: 'green',
-            text: `Deleted wireguard instance ${item.name}`
-        })
-    })
-    if (ret) {
-        alert.value = ret
-    }
-    console.log('Done deleting wg instance.')*/
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  if (!isSysAdmin.value) {
-    alert.value = {
-      on: true,
-      text: 'Operation is only allowed for system administrators.',
-    }
-    return
-  }
-
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    const ret = await supPopAPI().getPopList(
-      undefined,
-      options.page,
-      options.itemsPerPage
-    )
-    totalItems.value = ret?.data.count ?? 0
-    serverItems.value = ret?.data.popList ?? []
-    console.log('pop configs:', serverItems.value, ret?.data)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading pop configs.')
   loading.value = false
 }
 
@@ -114,13 +94,13 @@ function confirmDeleteText(item: PopConfig): string {
       <v-chip size="large">Pops</v-chip>
       <v-spacer></v-spacer>
       <AddButton label="Add Pop" @click="addPopDialog = true"></AddButton>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
       :headers="headers"
-      :hide-default-footer="totalItems <= itemsPerPage"
+      :hide-default-footer="hideFooter"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"
@@ -142,7 +122,7 @@ function confirmDeleteText(item: PopConfig): string {
     </v-data-table-server>
     <AddSupervisorPopDialog
       v-model="addPopDialog"
-      @added="loadItems(loadOptions)"
+      @added="refresh"
     ></AddSupervisorPopDialog>
   </v-container>
 </template>

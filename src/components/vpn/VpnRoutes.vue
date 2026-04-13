@@ -7,12 +7,11 @@
 import { ref } from 'vue'
 import { mdiCheck } from '@mdi/js'
 import { storeToRefs } from 'pinia'
-import { decamelize } from '@cylonix/humps'
 import { V1Route } from '@/clients/headscale/api'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
+import { useServerTable, buildSortParams } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -42,67 +41,35 @@ const adminViewHeaders = ref([
   ...headers.value,
 ] as const)
 
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<V1Route[]>()
-const totalItems = ref(0)
 
 const store = useUserStore()
 const { isAdmin, isNetworkAdmin, isSysAdmin, namespace, user } = storeToRefs(
   store
 )
 
-async function deleteItem(item: V1Route) {
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    if (!item.id) {
-      return
+const {
+  alert,
+  hideFooter,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<V1Route>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options }) => {
+    const network = user.value?.networkDomain
+    if (!isAdmin.value && !isNetworkAdmin.value) {
+      throw new Error('Only Network Admins can view routes.')
     }
-    await vpnAPI.headscaleServiceDeleteRoute(item.id)
-    await loadItems(loadOptions.value)
-    newToast({
-      on: true,
-      color: 'green',
-      text: `Successfully deleted route ${item.prefix}`,
-    })
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done deleting route.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  const network = user.value?.networkDomain
-  if (!isAdmin.value && !isNetworkAdmin.value) {
-    alert.value = {
-      on: true,
-      text: 'Only Network Admins can view routes.',
+    // Custom sort: 'node' maps to 'node_id' on the backend
+    let { sortBy, sortDesc } = buildSortParams(options.sortBy)
+    if (sortBy) {
+      sortBy = sortBy.replace(/\bnode\b/, 'node_id')
     }
-  }
-  let sortBy: string | undefined
-  let sortDesc: string | undefined
-  for (const [i, sort] of options.sortBy.entries()) {
-    if (i === 0) {
-      sortBy = decamelize(sort.key)
-      if (sortBy === 'node') {
-        sortBy = 'node_id'
-      }
-      sortDesc = sort.order ?? ''
-    } else {
-      sortBy = sortBy + ',' + decamelize(sort.key)
-      sortDesc = sortDesc + ',' + (sort.order ?? '')
-    }
-  }
-
-  const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceGetRoutes(
       undefined,
       [],
@@ -115,14 +82,30 @@ async function loadItems(options: any) {
       options.page,
       options.itemsPerPage
     )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.routes ?? []
-    console.log('routes:', serverItems.value, ret?.data)
+    return {
+      items: ret?.data.routes ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
+
+async function deleteItem(item: V1Route) {
+  loading.value = true
+  const ret = await tryRequest(async () => {
+    if (!item.id) {
+      return
+    }
+    await vpnAPI.headscaleServiceDeleteRoute(item.id)
+    await refresh()
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully deleted route ${item.prefix}`,
+    })
   })
   if (ret) {
     alert.value = ret
   }
-  console.log('Done loading items.')
   loading.value = false
 }
 
@@ -135,13 +118,13 @@ function confirmDeleteText(item: V1Route): string {
     <Alert v-model="alert"></Alert>
     <v-row class="mx-2 my-1" align="center" justify="space-between">
       <v-chip size="large">Routes</v-chip>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
       :headers="isSysAdmin ? adminViewHeaders : headers"
-      :hide-default-footer="itemsPerPage >= totalItems"
+      :hide-default-footer="hideFooter"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"

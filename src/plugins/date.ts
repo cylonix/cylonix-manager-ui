@@ -23,7 +23,7 @@ export function shortTs(timestamp?: string|number): string | undefined {
     }
     const d = new Date(timestamp)
     const now = new Date()
-    if (d.toDateString() == now.toDateString()) {
+    if (d.toDateString() === now.toDateString()) {
       return `today ${shortTimeFmt.format(d)}`
     }
     return toShortFmt(d)

@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 declare global {
-  interface Window { configs: any; }
+  interface Window { configs: Record<string, string> | undefined; }
 }
 
 export default function getEnv(name: string) {
-  console.log("windows.configs:", window?.configs)
   return window?.configs?.[name] || import.meta.env[name]
 }

@@ -19,7 +19,7 @@ function idledForTooLong() {
     return
   }
   dialog.value = true
-  dialogTimeout = setTimeout(async () => {
+  dialogTimeout = window.setTimeout(async () => {
     if (!loggedIn.value) {
       return
     }
@@ -32,7 +32,7 @@ function idledForTooLong() {
 let idleTimeout: number
 function resetIdleTimer() {
   clearTimeout(idleTimeout)
-  idleTimeout = setTimeout(idledForTooLong, 600 * 1000 /* 600 seconds */)
+  idleTimeout = window.setTimeout(idledForTooLong, 600 * 1000 /* 600 seconds */)
 }
 function checkIdling() {
   resetIdleTimer()

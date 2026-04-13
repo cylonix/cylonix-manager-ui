@@ -11,7 +11,7 @@ const preAuthKeysRef = ref()
 
 function onGenerated() {
   // Trigger reload with current options
-  preAuthKeysRef.value?.loadItems(preAuthKeysRef.value?.loadOptions)
+  preAuthKeysRef.value?.refresh()
 }
 </script>
 <template>

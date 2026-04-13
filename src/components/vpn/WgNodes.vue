@@ -7,11 +7,11 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { WgNode } from '@/clients/manager/api'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, wgAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { compactList, hexToBase64 } from '@/plugins/utils'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -43,17 +43,33 @@ const headers = ref([
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<WgNode[]>()
-const totalItems = ref(0)
 
 const store = useUserStore()
 const { isAdmin } = storeToRefs(store)
+
+const {
+  alert,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<WgNode>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options }) => {
+    if (!isAdmin.value) {
+      throw new Error('Operation is only allowed for administrators.')
+    }
+    const ret = await wgAPI.listWgNodes([], options.page, options.itemsPerPage)
+    return {
+      items: ret?.data.items ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
 
 function shortID(id: string | undefined): string | undefined {
   return id?.substring(0)
@@ -67,7 +83,7 @@ async function deleteItem(item: WgNode) {
   loading.value = true
   const ret = await tryRequest(async () => {
     await wgAPI.deleteWgNodes([item.id])
-    await loadItems(loadOptions.value)
+    await refresh()
     newToast({
       on: true,
       color: 'green',
@@ -77,31 +93,6 @@ async function deleteItem(item: WgNode) {
   if (ret) {
     alert.value = ret
   }
-  console.log('Done deleting wg node.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  if (!isAdmin.value) {
-    alert.value = {
-      on: true,
-      text: 'Operation is only allowed for administrators.',
-    }
-    return
-  }
-
-  const ret = await tryRequest(async () => {
-    const ret = await wgAPI.listWgNodes([], options.page, options.itemsPerPage)
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.items ?? []
-    console.log('wg nodes:', serverItems.value, ret?.data)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading wg nodes.')
   loading.value = false
 }
 
@@ -117,7 +108,7 @@ function confirmDeleteText(item: WgNode): string {
     <Alert v-model="alert"></Alert>
     <v-chip size="large">WireGuard gateways</v-chip>
     <v-row align="center" justify="end">
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"

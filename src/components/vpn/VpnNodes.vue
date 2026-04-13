@@ -45,7 +45,7 @@ function navigateToDetails(item: V1Node) {
     return
   }
   setCurrentNode(item)
-  router.push('/ui/vpn-node-details')
+  router.push(`/ui/vpn-node-details/${item.id}`)
 }
 
 function openShareDialog(item: V1Node) {
@@ -98,11 +98,11 @@ const adminViewHeaders = [
     title: 'IP',
     key: 'ipAddresses',
     value: (item: any) => {
-      if ((item.ipAddresses.length = 1)) {
+      if (item.ipAddresses.length === 1) {
         return item.ipAddresses[0]
       }
       if (item.ipAddresses.length > 1) {
-        return item.ipAddresses[0].join(',')
+        return item.ipAddresses.join(',')
       }
     },
   },
@@ -146,11 +146,11 @@ const lgHeaders = [
     title: 'IP',
     key: 'ipAddresses',
     value: (item: any) => {
-      if ((item.ipAddresses.length = 1)) {
+      if (item.ipAddresses.length === 1) {
         return item.ipAddresses[0]
       }
       if (item.ipAddresses.length > 1) {
-        return item.ipAddresses[0].join(',')
+        return item.ipAddresses.join(',')
       }
     },
   },
@@ -218,11 +218,11 @@ const mdHeaders = [
     title: 'IP',
     key: 'ipAddresses',
     value: (item: any) => {
-      if ((item.ipAddresses.length = 1)) {
+      if (item.ipAddresses.length === 1) {
         return item.ipAddresses[0]
       }
       if (item.ipAddresses.length > 1) {
-        return item.ipAddresses[0].join(',')
+        return item.ipAddresses.join(',')
       }
     },
   },
@@ -451,7 +451,7 @@ async function loadItems(options: any, forceRefresh = false) {
   const network = user.value?.networkDomain
   console.log('uid=', uID, 'network=', network)
 
-  var forNamespace = namespace.value
+  let forNamespace = namespace.value
   if (isSysAdmin.value) {
     forNamespace = filterEnterpriseID.value
   }
@@ -492,7 +492,7 @@ async function loadItems(options: any, forceRefresh = false) {
   }
   if (filterNodeKey.value) {
     filterFields.push('node_key')
-    var key = filterNodeKey.value
+    let key = filterNodeKey.value
     if (key.startsWith('0x')) {
       key = key.substring(2)
     } else {

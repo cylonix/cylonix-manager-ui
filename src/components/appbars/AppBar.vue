@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWsNotices } from '@/composables/wsnotices'
 import { loginAPI, tryRequest } from '@/plugins/api'
@@ -82,15 +82,17 @@ function openChangePassword() {
   userMenuOpen.value = false
 }
 
-setInterval(async () => {
+const tokenRefreshInterval = setInterval(async () => {
   if (loggedIn.value) {
-    console.log('logged in, refreshing token...')
     await tryRequest(async () => {
       await loginAPI.refreshToken()
-      console.log('token refreshed.')
     })
   }
 }, 600 * 1000 /* 600 seconds */)
+
+onBeforeUnmount(() => {
+  clearInterval(tokenRefreshInterval)
+})
 </script>
 <template>
   <v-app-bar elevation="1" app fixed clipped-left>

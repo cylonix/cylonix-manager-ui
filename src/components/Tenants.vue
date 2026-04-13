@@ -7,9 +7,9 @@
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import { TenantConfig } from '@/clients/manager'
-import type { Alert } from '@/plugins/alert'
 import { tenantAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
+import { useServerTable } from '@/composables/useServerTable'
 import { useTenantsStore } from '@/stores/tenants'
 import { useUserStore } from '@/stores/user'
 import { mdiCheck } from '@mdi/js'
@@ -38,49 +38,45 @@ const headers = ref([
 ] as const)
 
 const addTenantDialog = ref()
-const alert = ref<Alert>({ on: false })
 const editTenantDialog = ref()
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadTenantOptions = ref()
 const note = ref()
 const search = ref('')
-const serverItems = ref<TenantConfig[]>([])
 const tenant = ref<TenantConfig>()
-const totalItems = ref(0)
 
-async function loadTenants(options: any) {
-  loadTenantOptions.value = options
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    // Parameters:
-    // requestBody: string[], namespace?: string | undefined,
-    // contain?: string | undefined, filterBy?: string | undefined,
-    // filterValue?: string | undefined, sortBy?: string | undefined,
-    // sortDesc?: string | undefined, page?: number | undefined,
-    // pageSize?: number | undefined
+const {
+  alert,
+  hideFooter,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<TenantConfig>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options, sortBy, sortDesc }) => {
     const ret = await tenantAPI.listTenantConfig(
       [] /* id list */,
       undefined /* namespace */,
       undefined /* contain */,
       undefined /* filterBy */,
       undefined /* filterValue */,
-      options.sortBy[0]?.key /* sortBy */,
-      options.sortBy[0]?.order /* sortDesc */,
+      sortBy,
+      sortDesc,
       options.page,
       options.itemsPerPage
     )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.items ?? []
-    for (const t of serverItems.value) {
+    const items = ret?.data.items ?? []
+    for (const t of items) {
       tenantsCache.set(t)
     }
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  loading.value = false
-}
+    return {
+      items,
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
+
 function confirmDeleteText(item: TenantConfig): string {
   return `Please confirm permanently deleting tenant "${item.name}".`
 }
@@ -89,7 +85,6 @@ function editTenant(item: TenantConfig) {
   editTenantDialog.value = true
 }
 async function deleteTenant(item: TenantConfig) {
-  console.log(`Deleting tenant "${item.name}".`)
   loading.value = true
   const ret = await tryRequest(async () => {
     await tenantAPI.deleteTenantConfigs([item.id])
@@ -98,7 +93,7 @@ async function deleteTenant(item: TenantConfig) {
       color: 'green',
       text: `Tenant "${item.name}" has been deleted successfully.`,
     })
-    await loadTenants(loadTenantOptions.value)
+    await refresh()
   })
   if (ret) {
     alert.value = ret
@@ -115,19 +110,19 @@ async function deleteTenant(item: TenantConfig) {
       <v-btn v-if="isSysAdmin" class="mx-2" @click="addTenantDialog = true"
         >Add tenant</v-btn
       >
-      <RefreshButton class="mx-2" @refresh="loadTenants(loadTenantOptions)" />
+      <RefreshButton class="mx-2" @refresh="refresh" />
     </v-row>
     <v-data-table-server
       class="mt-2"
       v-model:items-per-page="itemsPerPage"
       show-expand
       :headers="headers"
-      :hide-default-footer="totalItems <= itemsPerPage"
+      :hide-default-footer="hideFooter"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"
       :search="search"
-      @update:options="loadTenants"
+      @update:options="loadItems"
     >
       <template v-slot:item.id="{ item }">
         <ShortenTextChip :text="item.id" />
@@ -156,13 +151,13 @@ async function deleteTenant(item: TenantConfig) {
     </v-data-table-server>
     <AddTenantDialog
       v-model="addTenantDialog"
-      @added="loadTenants(loadTenantOptions)"
+      @added="refresh"
     >
     </AddTenantDialog>
     <UpdateTenantDialog
       v-model="editTenantDialog"
       :tenant="tenant"
-      @updated="loadTenants(loadTenantOptions)"
+      @updated="refresh"
     >
     </UpdateTenantDialog>
   </v-container>

@@ -9,7 +9,9 @@ import { useTheme } from 'vuetify'
 import { parse as parseJsonc } from 'jsonc-parser'
 import { storeToRefs } from 'pinia'
 import { V1Node } from '@/clients/headscale/api'
-import type { Alert } from '@/plugins/alert'
+import Alert from '@/components/alerts/Alert.vue'
+import VpnConnectivityGraph from '@/components/vpn/VpnConnectivityGraph.vue'
+import type { Alert as AlertType } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { usePolicyStore } from '@/stores/policy'
@@ -43,7 +45,7 @@ let editor: monaco.editor.IStandaloneCodeEditor | null = null
 let diffEditor: monaco.editor.IStandaloneDiffEditor | null = null
 
 const theme = useTheme()
-const alert = ref<Alert>({ on: false })
+const alert = ref<AlertType>({ on: false })
 const loading = ref(false)
 const editorContainer = ref<HTMLElement>()
 const diffEditorContainer = ref<HTMLElement>()
@@ -531,7 +533,7 @@ onBeforeUnmount(() => {
               <v-card-text v-if="showConnectivity">
                 <VpnConnectivityGraph
                   :loading="loading"
-                  :nodes="nodes"
+                  :nodes="nodes ?? []"
                   :policy="policy"
                 />
               </v-card-text>

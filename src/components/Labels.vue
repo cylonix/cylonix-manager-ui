@@ -10,6 +10,7 @@ import { Label } from '@/clients/manager/api'
 import type { Alert } from '@/plugins/alert'
 import { labelAPI, tryRequest } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 import { mdiStar } from '@mdi/js'
 
@@ -26,17 +27,40 @@ const headers = ref([
 ] as const)
 
 const addDialog = ref(false)
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<Label[]>()
-const totalItems = ref(0)
 
 const store = useUserStore()
 const { isAdmin, user } = storeToRefs(store)
+
+const {
+  alert,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<Label>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options, sortBy, sortDesc }) => {
+    const ret = await labelAPI.listLabel(
+      undefined,
+      undefined /* Label name */,
+      undefined /* category */,
+      undefined /* filter by */,
+      undefined /* filter value */,
+      sortBy,
+      sortDesc,
+      options.page,
+      options.itemsPerPage
+    )
+    return {
+      items: ret?.data.items ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
 
 function shortID(id: string | undefined): string | undefined {
   return id?.substring(0)
@@ -67,7 +91,7 @@ Please login as an administrator first.
   loading.value = true
   const ret = await tryRequest(async () => {
     await labelAPI.deleteLabels([item.id])
-    await loadItems(loadOptions.value)
+    await refresh()
     newToast({
       on: true,
       color: 'green',
@@ -77,33 +101,6 @@ Please login as an administrator first.
   if (ret) {
     alert.value = ret
   }
-  console.log('Done deleting Label.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    const ret = await labelAPI.listLabel(
-      undefined,
-      undefined /* Label name */,
-      undefined /* category */,
-      undefined /* filter by */,
-      undefined /* filter value */,
-      options.sortBy[0]?.key /* sortBy */,
-      options.sortBy[0]?.order /* sortDesc */,
-      options.page,
-      options.itemsPerPage
-    )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.items ?? []
-    console.log('labels:', serverItems.value, ret?.data)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading labels.')
   loading.value = false
 }
 
@@ -122,7 +119,7 @@ function addButtonClicked() {
       <v-chip size="large">Labels</v-chip>
       <v-spacer></v-spacer>
       <v-btn class="mx-1" @click="addButtonClicked">Add Label</v-btn>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
@@ -166,7 +163,7 @@ function addButtonClicked() {
       v-model="addDialog"
       withNamespace
       withUsername
-      @added="loadItems(loadOptions)"
+      @added="refresh"
     >
     </AddLabelDialog>
   </v-container>

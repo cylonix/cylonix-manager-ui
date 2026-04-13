@@ -1,7 +1,7 @@
 // Copyright (c) EZBLOCK INC. & AUTHORS
 // SPDX-License-Identifier: BSD-3-Clause
 
-import { createWebHistory, createRouter } from 'vue-router'
+import { createWebHistory, createRouter, type RouteLocationNormalized } from 'vue-router'
 
 // Components are lazy-loaded in route definitions below to enable code-splitting.
 import { useUserStore } from '@/stores/user'
@@ -22,7 +22,7 @@ const routes = [
     path: '/delete-account-with-login',
     name: "delete-account-with-login",
     component: () => import('@/components/Login.vue'),
-    props: (route: any) => ({
+    props: (route: RouteLocationNormalized) => ({
       redirect: '/delete-account',
     })
   },
@@ -36,7 +36,7 @@ const routes = [
   {
     path: '/login/:sessionID?',
     component: () => import('@/components/Login.vue'),
-    props: (route: any) => ({
+    props: (route: RouteLocationNormalized) => ({
       sessionID: route.params.sessionID,
       redirect: route.query.redirect,
     })
@@ -45,7 +45,7 @@ const routes = [
     path: '/invite',
     name: 'invite',
     component: () => import('@/components/Login.vue'),
-    props: (route: any) => ({
+    props: (route: RouteLocationNormalized) => ({
       inviteCode: route.query.code,
     })
   },
@@ -53,7 +53,7 @@ const routes = [
     path: '/303/login/approval',
     name: 'login-approval',
     component: () => import('@/components/logins/LoginApproval.vue'),
-    props: (route: any) => ({
+    props: (route: RouteLocationNormalized) => ({
       approvalState: route.query.state,
     })
   },
@@ -61,7 +61,7 @@ const routes = [
     path: '/303/login/error',
     name: 'login-error',
     component: () => import('@/components/logins/LoginError.vue'),
-    props: (route: any) => ({
+    props: (route: RouteLocationNormalized) => ({
       error: route.query.error,
     })
   },
@@ -70,7 +70,7 @@ const routes = [
     path: '/oauth-success/:sessionID?',
     name: 'oauth-success',
     component: () => import('@/components/logins/OauthSuccess.vue'),
-    props: (route: any) => ({
+    props: (route: RouteLocationNormalized) => ({
       sessionID: route.params.sessionID,
       redirect: route.query.redirect,
       inviteCode: route.query.inviteCode,
@@ -120,7 +120,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   { path: '/ui/vpn-nodes', component: () => import('@/components/vpn/VpnNodes.vue'), meta: { requiresAuth: true } },
-  { path: '/ui/vpn-node-details', component: () => import('@/components/vpn/VpnNodeDetails.vue'), meta: { requiresAuth: true } },
+  { path: '/ui/vpn-node-details/:nodeId', component: () => import('@/components/vpn/VpnNodeDetails.vue'), meta: { requiresAuth: true }, props: true },
   {
     path: '/ui/vpn-pre-auth-keys',
     component: () => import('@/components/vpn/VpnPreAuthKeys.vue'),
@@ -145,7 +145,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   { path: '/web-privacy-policy', component: () => import('@/components/terms/WebPrivacyPolicy.vue') },
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+  { path: '/:pathMatch(.*)*', component: () => import('@/components/NotFound.vue') }
 ]
 
 const router = createRouter({
@@ -157,21 +157,18 @@ router.beforeEach((to, from) => {
   const store = useUserStore()
 
   if (to.meta && to.meta.requiresAuth && !store.loggedIn) {
-    console.log('User not logged in, redirecting to login page from', from.path, '->', to.path)
     return {
       path: '/login',
       query: { redirect: to.fullPath }
     }
   }
-  if (to.path == '/' && !store.isAdmin) {
-    console.log("setting query to ", to.query)
+  if (to.path === '/' && !store.isAdmin) {
     return {
       path: '/ui/vpn-nodes',
       query: to.query
     }
   }
-  if (to.path == '/' && store.isAdmin) {
-    console.log("setting query to ", to.query)
+  if (to.path === '/' && store.isAdmin) {
     return {
       path: '/dashboard',
       query: to.query

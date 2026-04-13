@@ -32,8 +32,6 @@ use([
   TooltipComponent,
 ])
 
-//import { formatDistance } from 'date-fns'
-
 const { isNetworkAdmin, isAdmin, isSysAdmin } = storeToRefs(useUserStore())
 
 // Stats
@@ -188,7 +186,7 @@ async function fetchConfigHistory() {
 //}
 
 function startAutoRefresh() {
-  refreshTimer = setInterval(() => {
+  refreshTimer = window.setInterval(() => {
     fetchDashboardData()
   }, 30000) // 30 seconds
 }

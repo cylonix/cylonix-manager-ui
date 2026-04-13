@@ -6,12 +6,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { WgDevice } from '@/clients/manager/api'
-import { decamelize } from '@cylonix/humps'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, wgAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { compactList } from '@/plugins/utils'
+import { useServerTable } from '@/composables/useServerTable'
 
 const headers = ref([
   { title: 'Enterprise ID', key: 'namespace' },
@@ -41,15 +40,39 @@ const headers = ref([
   { title: 'Actions', key: 'actions', sortable: false },
 ] as const)
 
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<WgDevice[]>()
-const totalItems = ref(0)
 const onlineCount = ref(0)
+
+const {
+  alert,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<WgDevice>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options, sortBy, sortDesc }) => {
+    const ret = await wgAPI.listVpnDevice(
+      [],
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      options.page,
+      options.itemsPerPage,
+      sortBy,
+      sortDesc
+    )
+    onlineCount.value = ret?.data.online ?? 0
+    return {
+      items: ret?.data.devices ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
 
 function shortID(id: string | undefined): string | undefined {
   return id?.substring(0)
@@ -63,7 +86,7 @@ async function deleteItem(item: WgDevice) {
   loading.value = true
   const ret = await tryRequest(async () => {
     await wgAPI.deleteVpnDevices([item.deviceID])
-    await loadItems(loadOptions.value)
+    await refresh()
     newToast({
       on: true,
       color: 'green',
@@ -73,45 +96,6 @@ async function deleteItem(item: WgDevice) {
   if (ret) {
     alert.value = ret
   }
-  console.log('Done deleting wg device.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  let sortBy: string | undefined
-  let sortDesc: string | undefined
-  for (const [i, sort] of options.sortBy.entries()) {
-    if (i === 0) {
-      sortBy = decamelize(sort.key)
-      sortDesc = sort.order ?? ''
-    } else {
-      sortBy = sortBy + ',' + decamelize(sort.key)
-      sortDesc = sortDesc + ',' + (sort.order ?? '')
-    }
-  }
-  const ret = await tryRequest(async () => {
-    const ret = await wgAPI.listVpnDevice(
-      [],
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      options.page,
-      options.itemsPerPage,
-      sortBy,
-      sortDesc
-    )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.devices ?? []
-    onlineCount.value = ret?.data.online ?? 0
-    console.log('wg devices:', ret?.data)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading wg devices.')
   loading.value = false
 }
 
@@ -127,7 +111,7 @@ function confirmDeleteText(item: WgDevice): string {
     <Alert v-model="alert"></Alert>
     <v-chip size="large">WireGuard devices</v-chip>
     <v-row align="center" justify="end">
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"

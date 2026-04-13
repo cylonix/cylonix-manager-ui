@@ -7,12 +7,11 @@
 import { ref, computed } from 'vue'
 import { mdiCheck } from '@mdi/js'
 import { storeToRefs } from 'pinia'
-import { decamelize } from '@cylonix/humps'
 import { V1PreAuthKey } from '@/clients/headscale/api'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
@@ -55,14 +54,8 @@ const sysAdminHeaders = ref([
   ...adminHeaders.value,
 ] as const)
 
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(20)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<V1PreAuthKey[]>()
-const totalItems = ref(0)
 
 // Filter state
 const filterEnterpriseID = ref()
@@ -80,6 +73,46 @@ const store = useUserStore()
 const { isAdmin, isNetworkAdmin, isSysAdmin, namespace, user } = storeToRefs(
   store
 )
+
+const {
+  alert,
+  hideFooter,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<V1PreAuthKey>({
+  defaultItemsPerPage: 20,
+  onLoad: async ({ options, sortBy, sortDesc }) => {
+    const uID = user.value?.userID
+    if (!uID) {
+      throw new Error('Missing user ID.')
+    }
+
+    let forNamespace = namespace.value
+    if (isSysAdmin.value) {
+      forNamespace = filterEnterpriseID.value
+    }
+
+    const ret = await vpnAPI.headscaleServiceListPreAuthKeys(
+      isAdmin.value && !props.forUserOnly ? undefined : uID,
+      [],
+      isSysAdmin.value && !props.forUserOnly ? forNamespace : namespace.value,
+      filterUser.value ? 'username' : undefined,
+      filterUser.value,
+      sortBy,
+      sortDesc,
+      options.page,
+      options.itemsPerPage
+    )
+    return {
+      items: ret?.data.preAuthKeys ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
 
 const computedHeaders = computed(() => {
   if (props.forUserOnly) {
@@ -99,7 +132,7 @@ async function deleteItem(item: V1PreAuthKey) {
       return
     }
     await vpnAPI.headscaleServiceDeletePreAuthKey(item.id)
-    await loadItems(loadOptions.value)
+    await refresh()
     newToast({
       on: true,
       color: 'green',
@@ -109,70 +142,6 @@ async function deleteItem(item: V1PreAuthKey) {
   if (ret) {
     alert.value = ret
   }
-  console.log('Done deleting pre auth key.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  let uID = user.value?.userID
-  if (!uID) {
-    alert.value = {
-      on: true,
-      text: 'Missing user ID.',
-      by: 'loadItems',
-    }
-    return
-  }
-  console.log(
-    'Loading pre-auth keys for user:',
-    uID,
-    options,
-    props.forUserOnly
-  )
-
-  var forNamespace = namespace.value
-  if (isSysAdmin.value) {
-    forNamespace = filterEnterpriseID.value
-  }
-
-  let sortBy: string | undefined
-  let sortDesc: string | undefined
-  for (const [i, sort] of options.sortBy.entries()) {
-    if (i === 0) {
-      sortBy = decamelize(sort.key)
-      sortDesc = sort.order ?? ''
-    } else {
-      sortBy = sortBy + ',' + decamelize(sort.key)
-      sortDesc = sortDesc + ',' + (sort.order ?? '')
-    }
-  }
-  const ret = await tryRequest(async () => {
-    const ret = await vpnAPI.headscaleServiceListPreAuthKeys(
-      isAdmin.value && !props.forUserOnly ? undefined : uID,
-      [],
-      isSysAdmin.value && !props.forUserOnly ? forNamespace : namespace.value,
-      filterUser.value ? 'username' : undefined,
-      filterUser.value,
-      sortBy,
-      sortDesc,
-      options.page,
-      options.itemsPerPage
-    )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.preAuthKeys ?? []
-    console.log('pre-auth-keys:', serverItems.value, ret?.data)
-  })
-  if (ret) {
-    ret.by = 'loadItems'
-    alert.value = ret
-  } else {
-    if (alert.value && alert.value.by === 'loadItems') {
-      alert.value = { on: false }
-    }
-  }
-  console.log('Done loading items.')
   loading.value = false
 }
 
@@ -181,13 +150,13 @@ function confirmDeleteText(item: V1PreAuthKey): string {
 }
 
 function applyFilters() {
-  loadItems(loadOptions.value)
+  refresh()
 }
 
 function clearFilters() {
   filterEnterpriseID.value = undefined
   filterUser.value = undefined
-  loadItems(loadOptions.value)
+  refresh()
 }
 
 // Expiry management functions
@@ -221,7 +190,7 @@ async function confirmDisableExpiry() {
       text: `Successfully disabled expiry for pre-auth key`,
     })
     showDisableExpiryDialog.value = false
-    await loadItems(loadOptions.value)
+    await refresh()
   })
   if (ret) {
     alert.value = ret
@@ -245,7 +214,7 @@ async function confirmExpireNow() {
       text: `Successfully expired pre-auth key`,
     })
     showExpireNowDialog.value = false
-    await loadItems(loadOptions.value)
+    await refresh()
   })
   if (ret) {
     alert.value = ret
@@ -293,7 +262,7 @@ async function confirmSetExpiry() {
       text: `Successfully set expiry for pre-auth key to ${newExpiryDate.value!.toLocaleDateString()}`,
     })
     showSetExpiryDialog.value = false
-    await loadItems(loadOptions.value)
+    await refresh()
   })
   if (ret) {
     alert.value = ret
@@ -302,8 +271,7 @@ async function confirmSetExpiry() {
 }
 
 defineExpose({
-  loadItems,
-  loadOptions: computed(() => loadOptions.value),
+  refresh,
 })
 </script>
 <template>
@@ -311,7 +279,7 @@ defineExpose({
     <Alert v-model="alert"></Alert>
     <v-row class="mx-2 my-1" align="center" justify="space-between">
       <v-chip class="mx-2" size="large">Pre-auth Keys</v-chip>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
 
     <!-- Filter Row -->
@@ -346,7 +314,7 @@ defineExpose({
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
       :headers="computedHeaders"
-      :hide-default-footer="itemsPerPage >= totalItems"
+      :hide-default-footer="hideFooter"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"

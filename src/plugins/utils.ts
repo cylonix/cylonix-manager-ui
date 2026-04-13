@@ -11,7 +11,7 @@ export function compactList(l?: Array<string>): string | undefined {
     if (!l) {
         return undefined
     }
-    if (l.length == 1) {
+    if (l.length === 1) {
         return l[0]
     }
     return l.join(',')
@@ -24,10 +24,10 @@ export function isMobile(): boolean {
 }
 
 export function isMacOS(): boolean {
-  console.log('Checking if macOS', navigator.userAgent, 'userAgentData', 'userAgentData' in navigator)
   // Try using modern API first
   if ('userAgentData' in navigator) {
-    return (navigator as any).userAgentData.platform === 'macOS'
+    const nav = navigator as Navigator & { userAgentData: { platform: string } }
+    return nav.userAgentData.platform === 'macOS'
   }
   // Fallback to userAgent string
   return /Mac OS/.test(navigator.userAgent)

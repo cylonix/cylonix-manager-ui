@@ -6,12 +6,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { decamelize } from '@cylonix/humps'
 import { V1ApiKey } from '@/clients/headscale/api'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -46,67 +45,30 @@ const headers = ref([
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
 ] as const)
 
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<V1ApiKey[]>()
-const totalItems = ref(0)
 
 const store = useUserStore()
 const { isAdmin, isSysAdmin, namespace, user } = storeToRefs(store)
 
-async function deleteItem(item: V1ApiKey) {
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    if (!item.prefix) {
-      return
+const {
+  alert,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<V1ApiKey>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options, sortBy, sortDesc }) => {
+    let uID = user.value?.userID
+    if (!uID) {
+      throw new Error('Missing user ID.')
     }
-    await vpnAPI.headscaleServiceDeleteApiKey(item.prefix)
-    await loadItems(loadOptions.value)
-    newToast({
-      on: true,
-      color: 'green',
-      text: `Successfully deleted api key ${item.id} ${item.prefix}`,
-    })
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done deleting api key.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  let uID = user.value?.userID
-  if (!uID) {
-    alert.value = {
-      on: true,
-      text: 'Missing user ID.',
+    if (isAdmin.value) {
+      uID = undefined
     }
-    return
-  }
-  if (isAdmin.value) {
-    uID = undefined
-  }
-
-  let sortBy: string | undefined
-  let sortDesc: string | undefined
-  for (const [i, sort] of options.sortBy.entries()) {
-    if (i === 0) {
-      sortBy = decamelize(sort.key)
-      sortDesc = sort.order ?? ''
-    } else {
-      sortBy = sortBy + ',' + decamelize(sort.key)
-      sortDesc = sortDesc + ',' + (sort.order ?? '')
-    }
-  }
-
-  const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListApiKeys(
       isAdmin.value ? undefined : uID,
       [],
@@ -119,13 +81,30 @@ async function loadItems(options: any) {
       options.page,
       options.itemsPerPage
     )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.apiKeys ?? []
+    return {
+      items: ret?.data.apiKeys ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
+
+async function deleteItem(item: V1ApiKey) {
+  loading.value = true
+  const ret = await tryRequest(async () => {
+    if (!item.prefix) {
+      return
+    }
+    await vpnAPI.headscaleServiceDeleteApiKey(item.prefix)
+    await refresh()
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully deleted api key ${item.id} ${item.prefix}`,
+    })
   })
   if (ret) {
     alert.value = ret
   }
-  console.log('Done loading items.')
   loading.value = false
 }
 
@@ -138,7 +117,7 @@ function confirmDeleteText(item: V1ApiKey): string {
     <Alert v-model="alert"></Alert>
     <v-row class="mx-2 my-1" align="center" justify="space-between">
       <v-chip size="large">API Keys</v-chip>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"

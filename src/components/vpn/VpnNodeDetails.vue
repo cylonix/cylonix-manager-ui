@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   mdiMicrosoftWindows,
   mdiLinux,
@@ -27,6 +27,10 @@ import { formatExpiry, shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useUserStore } from '@/stores/user'
 
+const props = defineProps<{
+  nodeId: string
+}>()
+
 const { currentNode: nodeItem, setCurrentNode } = useCurrentNode()
 const router = useRouter()
 const { smAndUp } = useDisplay()
@@ -37,6 +41,25 @@ const store = useUserStore()
 const { isAdmin, isNetworkAdmin, isSysAdmin } = storeToRefs(store)
 
 const alert = ref<Alert>({ on: false })
+const loadingNode = ref(false)
+
+onMounted(async () => {
+  if (nodeItem.value) {
+    return // Already have the node in memory
+  }
+  // Node lost (e.g. page refresh) — fetch by ID from the route param
+  loadingNode.value = true
+  const ret = await tryRequest(async () => {
+    const resp = await vpnAPI.headscaleServiceGetNode(props.nodeId)
+    if (resp?.data.node) {
+      setCurrentNode(resp.data.node)
+    }
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  loadingNode.value = false
+})
 
 // Helper functions
 const getOSInfo = (item: V1Node) => {
@@ -50,9 +73,9 @@ const isExitNode = (item: V1Node) => {
   if (!routes || routes.length <= 0) {
     return false
   }
-  var hasV4 = false
-  var hasV6 = false
-  for (var r of routes) {
+  let hasV4 = false
+  let hasV6 = false
+  for (const r of routes) {
     if (r.prefix === '0.0.0.0/0' && r.enabled) {
       hasV4 = true
     } else if (r.prefix === '::/0' && r.enabled) {
@@ -70,9 +93,9 @@ const hasExitNodeRoutes = (item: V1Node) => {
   if (!routes || routes.length <= 0) {
     return false
   }
-  var hasV4 = false
-  var hasV6 = false
-  for (var r of routes) {
+  let hasV4 = false
+  let hasV6 = false
+  for (const r of routes) {
     if (r.prefix === '0.0.0.0/0') {
       hasV4 = true
     } else if (r.prefix === '::/0') {
@@ -90,9 +113,9 @@ const nonDefaultRoutes = (item: V1Node) => {
   if (!routes || routes.length <= 0) {
     return []
   }
-  var nonDefaultRoutes: V1RouteSpec[] = []
-  for (var r of routes) {
-    if (r.prefix === '0.0.0.0/0' || r.prefix == '::/0') {
+  const nonDefaultRoutes: V1RouteSpec[] = []
+  for (const r of routes) {
+    if (r.prefix === '0.0.0.0/0' || r.prefix === '::/0') {
       continue
     }
     nonDefaultRoutes.push(r)
@@ -173,7 +196,7 @@ async function toggleExitNode(item: V1Node) {
     }
     return
   }
-  for (var r of routes) {
+  for (const r of routes) {
     if (r.prefix === '0.0.0.0/0' || r.prefix === '::/0') {
       await toggleRoute(r)
     }
@@ -871,10 +894,18 @@ function getIconForNode(node: V1Node) {
     </v-row>
   </v-container>
 
+  <!-- Loading state -->
+  <v-container v-else-if="loadingNode" class="fill-height">
+    <v-row justify="center">
+      <v-progress-circular indeterminate color="primary" />
+    </v-row>
+  </v-container>
+
   <!-- No data state -->
   <v-container v-else>
     <v-row>
       <v-col cols="12" class="text-center">
+        <Alert v-model="alert" />
         <v-btn @click="goBack" :prepend-icon="mdiArrowLeft" variant="text">
           Back to Machines
         </v-btn>

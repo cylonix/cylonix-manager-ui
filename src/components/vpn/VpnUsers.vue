@@ -6,14 +6,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { decamelize } from '@cylonix/humps'
 import { mdiAccountPlus, mdiApple, mdiGithub } from '@mdi/js'
 import { V1User } from '@/clients/headscale/api'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { shortUUID } from '@/plugins/utils'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -34,15 +33,9 @@ const adminViewHeaders = ref([
   ...headers.value,
 ] as const)
 
-const alert = ref<Alert>({ on: false })
 const inviteDialog = ref(false)
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<V1User[]>()
-const totalItems = ref(0)
 const userInvitesRef = ref()
 const welcomeDialog = ref(false)
 
@@ -103,51 +96,23 @@ const organization = computed(() => {
   )
 })
 
-async function deleteItem(item: V1User) {
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    if (!item.id) {
-      return
+const {
+  alert,
+  hideFooter,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<V1User>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options, sortBy, sortDesc }) => {
+    const uID = user.value?.userID
+    const network = user.value?.networkDomain
+    if (!uID) {
+      throw new Error('Missing user ID.')
     }
-    await vpnAPI.headscaleServiceDeleteUser(item.name ?? '')
-    await loadItems(loadOptions.value)
-    newToast({
-      on: true,
-      color: 'green',
-      text: `Successfully deleted user ${item.id} ${item.loginName}`,
-    })
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  loading.value = true
-  const uID = user.value?.userID
-  const network = user.value?.networkDomain
-  if (!uID) {
-    alert.value = {
-      on: true,
-      text: 'Missing user ID.',
-    }
-    return
-  }
-
-  let sortBy: string | undefined
-  let sortDesc: string | undefined
-  for (const [i, sort] of options.sortBy.entries()) {
-    if (i === 0) {
-      sortBy = decamelize(sort.key)
-      sortDesc = sort.order ?? ''
-    } else {
-      sortBy = sortBy + ',' + decamelize(sort.key)
-      sortDesc = sortDesc + ',' + (sort.order ?? '')
-    }
-  }
-  const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListUsers(
       isAdmin.value || isNetworkAdmin ? undefined : uID,
       [],
@@ -160,14 +125,30 @@ async function loadItems(options: any) {
       options.page,
       options.itemsPerPage
     )
-    totalItems.value = ret?.data.total ?? 0
-    serverItems.value = ret?.data.users ?? []
-    console.log('users:', serverItems.value, ret?.data)
+    return {
+      items: ret?.data.users ?? [],
+      total: ret?.data.total ?? 0,
+    }
+  },
+})
+
+async function deleteItem(item: V1User) {
+  loading.value = true
+  const ret = await tryRequest(async () => {
+    if (!item.id) {
+      return
+    }
+    await vpnAPI.headscaleServiceDeleteUser(item.name ?? '')
+    await refresh()
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully deleted user ${item.id} ${item.loginName}`,
+    })
   })
   if (ret) {
     alert.value = ret
   }
-  console.log('Done loading items.')
   loading.value = false
 }
 
@@ -284,13 +265,13 @@ function invitesSent() {
     >
       <v-row class="mx-2 my-1" align="center" justify="space-between">
         <h3 class="text-h6 mb-2">Users</h3>
-        <RefreshButton @refresh="loadItems(loadOptions)" />
+        <RefreshButton @refresh="refresh" />
       </v-row>
       <v-data-table-server
         v-model:items-per-page="itemsPerPage"
         class="mt-2"
         :headers="isSysAdmin ? adminViewHeaders : headers"
-        :hide-default-footer="itemsPerPage >= totalItems"
+        :hide-default-footer="hideFooter"
         :items="serverItems"
         :items-length="totalItems"
         :loading="loading"

@@ -7,10 +7,10 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { WgInstance } from '@/clients/supervisor/api'
-import type { Alert } from '@/plugins/alert'
 import { tryRequest, supWgAPI } from '@/plugins/api'
 import { newToast } from '@/plugins/toast'
 import { compactList } from '@/plugins/utils'
+import { useServerTable } from '@/composables/useServerTable'
 import { useUserStore } from '@/stores/user'
 
 const headers = ref([
@@ -35,17 +35,38 @@ const headers = ref([
 ] as const)
 
 const addWgDialog = ref(false)
-const alert = ref<Alert>({ on: false })
-const itemsPerPage = ref(10)
-const loading = ref(false)
-const loadOptions = ref()
 const note = ref('')
 const search = ref('')
-const serverItems = ref<WgInstance[]>([])
-const totalItems = ref(0)
 
 const store = useUserStore()
 const { isSysAdmin } = storeToRefs(store)
+
+const {
+  alert,
+  hideFooter,
+  itemsPerPage,
+  loading,
+  loadItems,
+  refresh,
+  serverItems,
+  totalItems,
+} = useServerTable<WgInstance>({
+  defaultItemsPerPage: 10,
+  onLoad: async ({ options }) => {
+    if (!isSysAdmin.value) {
+      throw new Error('Operation is only allowed for system administrators.')
+    }
+    const ret = await supWgAPI().getWgInstanceList(
+      undefined,
+      options.page,
+      options.itemsPerPage
+    )
+    return {
+      items: ret?.data.wgInstances ?? [],
+      total: ret?.data.count ?? 0,
+    }
+  },
+})
 
 async function deleteItem(item: WgInstance) {
   if (!isSysAdmin.value) {
@@ -58,7 +79,7 @@ async function deleteItem(item: WgInstance) {
   loading.value = true
   const ret = await tryRequest(async () => {
     await supWgAPI().deleteWgInstance(item.id ?? '')
-    await loadItems(loadOptions.value)
+    await refresh()
     newToast({
       on: true,
       color: 'green',
@@ -68,35 +89,6 @@ async function deleteItem(item: WgInstance) {
   if (ret) {
     alert.value = ret
   }
-  console.log('Done deleting wg instance.')
-  loading.value = false
-}
-
-async function loadItems(options: any) {
-  loadOptions.value = options
-  if (!isSysAdmin.value) {
-    alert.value = {
-      on: true,
-      text: 'Operation is only allowed for system administrators.',
-    }
-    return
-  }
-
-  loading.value = true
-  const ret = await tryRequest(async () => {
-    const ret = await supWgAPI().getWgInstanceList(
-      undefined,
-      options.page,
-      options.itemsPerPage
-    )
-    totalItems.value = ret?.data.count ?? 0
-    serverItems.value = ret?.data.wgInstances ?? []
-    console.log('wg gateways:', serverItems.value, ret?.data)
-  })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading wg gateways.')
   loading.value = false
 }
 
@@ -111,13 +103,13 @@ function confirmDeleteText(item: WgInstance): string {
       <v-chip size="large">WireGuard gateways</v-chip>
       <v-spacer></v-spacer>
       <AddButton @click="addWgDialog = true"></AddButton>
-      <RefreshButton @refresh="loadItems(loadOptions)" />
+      <RefreshButton @refresh="refresh" />
     </v-row>
     <v-data-table-server
       v-model:items-per-page="itemsPerPage"
       class="mt-2"
       :headers="headers"
-      :hide-default-footer="totalItems <= itemsPerPage"
+      :hide-default-footer="hideFooter"
       :items="serverItems"
       :items-length="totalItems"
       :loading="loading"
@@ -139,7 +131,7 @@ function confirmDeleteText(item: WgInstance): string {
     </v-data-table-server>
     <AddSupervisorWgDialog
       v-model="addWgDialog"
-      @added="loadItems(loadOptions)"
+      @added="refresh"
     ></AddSupervisorWgDialog>
   </v-container>
 </template>

@@ -32,7 +32,9 @@ const store = useUserStore()
 const { isAdmin, isNetworkAdmin, isSysAdmin, loggedIn } = storeToRefs(store)
 
 function updateRail() {
-  opened.value = [] // close all sub-groups.
+  if (rail.value) {
+    opened.value = [] // close all sub-groups when collapsing to rail
+  }
 }
 </script>
 

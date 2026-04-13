@@ -46,7 +46,10 @@ export const useUserStore = defineStore(
       }
     })
     function $checkExpiration() {
-      let passed = (Date.now() - updatedAt.value) / 1000 // seconds
+      if (!updatedAt.value) {
+        return // No active session, nothing to expire
+      }
+      const passed = (Date.now() - updatedAt.value) / 1000 // seconds
       if (passed >= ttl) {
         $reset()
       }

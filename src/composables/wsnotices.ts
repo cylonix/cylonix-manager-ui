@@ -25,7 +25,7 @@ export function useWsNotices() {
     immediate: false,
     autoReconnect: {
       retries: () => {
-        if (status.value != 'CLOSED') {
+        if (status.value !=='CLOSED') {
           console.log('Skip retry if connecting or already opened...')
           return false
         }
@@ -35,8 +35,8 @@ export function useWsNotices() {
         }
         return (
           (isAdmin.value ?? false) &&
-          closeCode.value != 1008 &&
-          closeCode.value != 3000
+          closeCode.value !==1008 &&
+          closeCode.value !==3000
         )
       },
       delay: 5000 /* every 5 second */,
@@ -102,14 +102,14 @@ export function useWsNotices() {
   })
 
   function connect() {
-    if (status.value != 'OPEN') {
+    if (status.value !=='OPEN') {
       console.log('open web socket')
       open()
     }
   }
 
   function disconnect() {
-    if (status.value == 'OPEN') {
+    if (status.value ==='OPEN') {
       console.log('close web socket')
       close()
       wsStatus.value = 'CLOSED'
@@ -117,7 +117,7 @@ export function useWsNotices() {
   }
 
   function toggle() {
-    if (status.value == 'OPEN') {
+    if (status.value ==='OPEN') {
       disconnect()
     } else {
       connect()
