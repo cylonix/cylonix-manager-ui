@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { mdiCircle, mdiChevronDown } from '@mdi/js'
+import { mdiCircle, mdiChevronDown, mdiPencilOutline } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -269,9 +269,10 @@ const search = ref('')
 // Stores
 const userStore = useUserStore()
 const nodesStore = useNodesStore()
-const { isAdmin, isNetworkAdmin, namespace, isSysAdmin, user } = storeToRefs(
+const { isAdmin, isNetworkAdmin, isNetworkOwner, namespace, isSysAdmin, user } = storeToRefs(
   userStore
 )
+const showNetworkDomainDialog = ref(false)
 const {
   myNodes,
   totalMyNodes,
@@ -595,6 +596,24 @@ function refreshData() {
   loadAllUsers(true)
 }
 
+async function onNetworkDomainUpdated() {
+  const userID = userStore.user?.userID
+  if (userID) {
+    const ret = await tryRequest(async () => {
+      const resp = await userAPI.getUserList(
+        [userID],
+        undefined, undefined, undefined, undefined, undefined, undefined,
+        undefined, undefined, true,
+      )
+      const fresh = resp.data.users?.find((u) => u.userID === userID)
+      if (fresh) userStore.user = fresh
+    })
+    if (ret) alert.value = ret
+  }
+  // Reload nodes since domain affects DNS names
+  refreshData()
+}
+
 function applyFilters() {
   clearCachedData()
   loadItems(loadOptions.value, true)
@@ -849,8 +868,16 @@ async function handleRejectSharedNode(item: V1Node) {
       <v-col>
         <v-chip size="large">Machines</v-chip>
         <v-chip size="large" class="mx-2 text-bold">{{ totalItems }}</v-chip>
-        <v-chip v-if="!isSysAdmin" variant="text"
-          >Network Domain: {{ user?.networkDomain }}
+        <v-chip v-if="!isSysAdmin" variant="text">
+          Network Domain: {{ user?.networkDomain }}
+          <v-btn
+            v-if="isAdmin || isNetworkAdmin || isNetworkOwner"
+            :icon="mdiPencilOutline"
+            variant="text"
+            size="x-small"
+            class="ml-1"
+            @click="showNetworkDomainDialog = true"
+          />
         </v-chip>
       </v-col>
       <v-col justify="end" class="text-right"
@@ -1217,6 +1244,13 @@ async function handleRejectSharedNode(item: V1Node) {
       v-model="showShareDialog"
       :node="nodeToShare"
       @shared="loadItems(loadOptions, true)"
+    />
+
+    <!-- Update Network Domain Dialog -->
+    <UpdateUserNetworkDomainDialog
+      v-model="showNetworkDomainDialog"
+      :user="user"
+      @updated="onNetworkDomainUpdated"
     />
   </v-container>
 </template>

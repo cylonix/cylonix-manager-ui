@@ -13,7 +13,6 @@ import { LoginType } from '@/clients/manager/api'
 import { mdiBell, mdiLockReset } from '@mdi/js'
 
 import { useNoticeStore } from '@/stores/notices'
-import { useToastStore } from '@/stores/toast'
 import { useUserStore } from '@/stores/user'
 import { useLoginStore } from '@/stores/login'
 
@@ -23,7 +22,6 @@ defineProps(['title'])
 const router = useRouter()
 const route = useRoute()
 const { alert, toggle } = useWsNotices()
-const { toast } = storeToRefs(useToastStore())
 const userStore = useUserStore()
 const { isAdmin, loggedIn, username, user } = storeToRefs(userStore)
 const loginStore = useLoginStore()
@@ -110,14 +108,6 @@ onBeforeUnmount(() => {
     <v-app-bar-title class="d-none d-sm-flex">{{ title }}</v-app-bar-title>
     <v-spacer></v-spacer>
     <slot />
-    <v-snackbar
-      v-model="toast.on"
-      location="top center"
-      :color="toast.color"
-      :text="toast.text"
-      :timeout="toast.timeout"
-      close-on-content-click
-    ></v-snackbar>
     <ToggleThemeButton></ToggleThemeButton>
     <v-tooltip v-if="isAdmin" location="top">
       <template v-slot:activator="{ props }">

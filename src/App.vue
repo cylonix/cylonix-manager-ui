@@ -53,5 +53,7 @@ onMounted(() => {
     >
       <router-view />
     </v-main>
+    <AppSnackbar />
+    <CommandPalette v-if="loggedIn" />
   </v-layout>
 </template>

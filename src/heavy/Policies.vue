@@ -10,10 +10,13 @@ import { parse as parseJsonc } from 'jsonc-parser'
 import { storeToRefs } from 'pinia'
 import { V1Node } from '@/clients/headscale/api'
 import Alert from '@/components/alerts/Alert.vue'
+import PolicyRulesTable from '@/components/vpn/PolicyRulesTable.vue'
+import PolicyMatrix from '@/components/vpn/PolicyMatrix.vue'
+import PolicyDerpMap from '@/components/vpn/PolicyDerpMap.vue'
 import VpnConnectivityGraph from '@/components/vpn/VpnConnectivityGraph.vue'
 import type { Alert as AlertType } from '@/plugins/alert'
 import { tryRequest, vpnAPI } from '@/plugins/api'
-import { newToast } from '@/plugins/toast'
+import { pushSuccess } from '@/plugins/toast'
 import { usePolicyStore } from '@/stores/policy'
 import { useUserStore } from '@/stores/user'
 import {
@@ -23,23 +26,36 @@ import {
   mdiFileCompare,
   mdiUndo,
   mdiContentSave,
+  mdiCodeJson,
+  mdiFormatListBulleted,
+  mdiGrid,
+  mdiGraphOutline,
+  mdiEarth,
 } from '@mdi/js'
 
 import * as monaco from 'monaco-editor'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
 
 // @ts-ignore
 self.MonacoEnvironment = {
   getWorker(_: any, label: string) {
     if (label === 'json') {
-      return new jsonWorker();
+      return new jsonWorker()
     }
-    return new editorWorker();
+    return new editorWorker()
   },
-};
+}
 
-// Do not use ref for this. It will cause the editor to freeze.
+type TabKey = 'editor' | 'rules' | 'matrix' | 'graph' | 'derp'
+
+interface Highlight {
+  src: string | null
+  dst: string | null
+  ruleIndex: number | null
+}
+
+// Do not use ref for the editor instance. It will cause the editor to freeze.
 // https://github.com/microsoft/monaco-editor/issues/3154
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 let diffEditor: monaco.editor.IStandaloneDiffEditor | null = null
@@ -56,43 +72,46 @@ const savedPolicy = ref('')
 const { policy } = storeToRefs(usePolicyStore())
 const { isNetworkAdmin, namespace, user } = storeToRefs(useUserStore())
 const nodes = ref<V1Node[]>()
-const showConnectivity = ref(false)
+const tab = ref<TabKey>('rules')
+const highlight = ref<Highlight>({ src: null, dst: null, ruleIndex: null })
+
+function setCellHighlight(src: string | null, dst: string | null) {
+  highlight.value = { src, dst, ruleIndex: null }
+}
+
+function setRuleHighlight(index: number | null) {
+  highlight.value = { ...highlight.value, ruleIndex: index }
+}
+
+function goToRule(index: number) {
+  setRuleHighlight(index)
+  tab.value = 'rules'
+}
+
+function clearHighlight() {
+  highlight.value = { src: null, dst: null, ruleIndex: null }
+}
 
 async function loadNodes() {
-  loading.value = true
   const uID = user.value?.userID
   if (!uID) {
-    alert.value = {
-      on: true,
-      text: 'Missing user ID.',
-    }
+    alert.value = { on: true, text: 'Missing user ID.' }
     return
   }
   const network = user.value?.networkDomain
-  console.log('uid=', uID, 'network=', network)
-  var forNamespace = namespace.value
+  const forNamespace = namespace.value
 
   const ret = await tryRequest(async () => {
     const ret = await vpnAPI.headscaleServiceListNodes(
       isNetworkAdmin.value ? (network ? undefined : uID) : uID,
       [],
       forNamespace,
-      network
+      network,
     )
     nodes.value = ret?.data.nodes ?? []
-    console.log('nodes:', ret?.data)
   })
-  if (ret) {
-    alert.value = ret
-  }
-  console.log('Done loading items.')
-  loading.value = false
+  if (ret) alert.value = ret
 }
-
-onMounted(() => {
-  console.log('Mounted Policies.vue')
-  loadNodes()
-})
 
 // Default policy template with comments
 const defaultPolicy = `// Example/default ACLs for unrestricted connections.
@@ -182,26 +201,22 @@ const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   formatOnType: true,
 }
 
-async function initEditor() {
+function initEditor() {
   const container = editorContainer.value
   if (!container) return
 
-  console.log('Initializing Monaco editor...', policy.value)
   const monacoInstance = monaco.editor.create(container, {
-    value: policy.value ?? defaultPolicy,
+    value: policy.value || defaultPolicy,
     ...editorOptions,
     theme: isDarkTheme.value ? 'vs-dark' : 'vs',
   })
 
-  // Configure JSON language
   monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
     allowComments: true,
     trailingCommas: 'ignore',
   })
 
   editor = monacoInstance
-
-  // Set up content change listener
   editor.onDidChangeModelContent(() => {
     policy.value = monacoInstance.getValue()
   })
@@ -222,22 +237,15 @@ function toggleDiffView() {
   showDiff.value = !showDiff.value
 
   if (showDiff.value) {
-    // Initialize diff editor
     setTimeout(() => initDiffEditor(), 100)
   } else {
-    // Dispose diff editor and reinitialize normal editor
     diffEditor?.dispose()
     diffEditor = null
-    console.log('Toggling diff view off...')
-    // Always dispose and recreate the editor to ensure it renders properly
     if (editor) {
       editor.dispose()
       editor = null
     }
-    setTimeout(() => {
-      console.log('Initializing normal editor after diff view...')
-      initEditor()
-    }, 100)
+    setTimeout(() => initEditor(), 100)
   }
 }
 
@@ -245,15 +253,13 @@ function initDiffEditor() {
   const container = diffEditorContainer.value
   if (!container) return
 
-  console.log('Initializing Monaco diff editor...')
-
   const originalModel = monaco.editor.createModel(
     savedPolicy.value || defaultPolicy,
-    'json'
+    'json',
   )
   const modifiedModel = monaco.editor.createModel(
     policy.value || defaultPolicy,
-    'json'
+    'json',
   )
 
   diffEditor = monaco.editor.createDiffEditor(container, {
@@ -264,43 +270,35 @@ function initDiffEditor() {
     minimap: { enabled: false },
   })
 
-  diffEditor.setModel({
-    original: originalModel,
-    modified: modifiedModel,
-  })
+  diffEditor.setModel({ original: originalModel, modified: modifiedModel })
 }
 
-// Update theme watcher
 watch(
   () => theme.global.name.value,
   (globalTheme) => {
     const newDark = globalTheme === 'dark'
-    // Sync local state with global theme if they differ
-    if (isDarkTheme.value !== newDark) {
-      isDarkTheme.value = newDark
-    }
-    // Update editor theme
+    if (isDarkTheme.value !== newDark) isDarkTheme.value = newDark
     editor?.updateOptions({ theme: newDark ? 'vs-dark' : 'vs' })
-  }
+  },
 )
 
 watch(
   [() => policy.value, () => savedPolicy.value],
   ([newPolicy, newSavedPolicy]) => {
     isPolicyDifferentThanSaved.value =
-      newSavedPolicy != '' && newPolicy !== newSavedPolicy
+      newSavedPolicy !== '' && newPolicy !== newSavedPolicy
   },
-  { immediate: true }
+  { immediate: true },
 )
+
 async function loadPolicy() {
   loading.value = true
   try {
     const ret = await tryRequest(async () => {
       const response = await vpnAPI.headscaleServiceGetPolicy(
         namespace.value,
-        user.value?.networkDomain
+        user.value?.networkDomain,
       )
-      console.log('Get Policy:', response)
       if (!response || !response.data || !response.data.policy) {
         alert.value = {
           on: true,
@@ -309,21 +307,18 @@ async function loadPolicy() {
         }
         if (!policy.value) {
           policy.value = defaultPolicy
+          editor?.setValue(defaultPolicy)
         }
-        console.log('policy does not exist')
         return
       }
       alert.value = { on: false }
       savedPolicy.value = response.data.policy
       if (!policy.value) {
-        console.log('policy is empty setting to saved policy')
         policy.value = savedPolicy.value
         editor?.setValue(savedPolicy.value)
       }
     })
-    if (ret) {
-      alert.value = ret
-    }
+    if (ret) alert.value = ret
   } finally {
     loading.value = false
   }
@@ -338,14 +333,11 @@ function validatePolicyFormat() {
   })
 
   if (errors.length > 0) {
-    // Format error messages with line numbers
     const errorMessages = errors
       .map((error) => {
         const beforeError = policy.value.substring(0, error.offset)
         const line = beforeError.split('\n').length
         const column = error.offset - beforeError.lastIndexOf('\n')
-
-        // Map error codes to readable messages
         const errorMap: { [key: number]: string } = {
           1: 'Invalid symbol',
           2: 'Invalid number format',
@@ -357,15 +349,12 @@ function validatePolicyFormat() {
           8: 'Right brace expected',
           9: 'Invalid comment',
         }
-
         const errorMessage = errorMap[error.error] || 'Unknown error'
         return `Line ${line}, Column ${column}: ${errorMessage}`
       })
       .join('\n')
-
     throw new Error(`Invalid JSON format:\n${errorMessages}`)
   }
-
   if (!parsedPolicy) {
     throw new Error('Failed to parse policy: Empty or invalid content')
   }
@@ -374,31 +363,21 @@ function validatePolicyFormat() {
 async function savePolicy() {
   loading.value = true
   try {
-    // Use JSONC parser instead of JSON.parse
     const ret = await tryRequest(async () => {
-      console.log('Saving policy:', policy.value)
       validatePolicyFormat()
-
-      const response = await vpnAPI.headscaleServiceSetPolicy({
+      await vpnAPI.headscaleServiceSetPolicy({
         namespace: namespace.value,
         network: user.value?.networkDomain,
         policy: policy.value,
       })
-      console.log('Set Policy:', response)
-      newToast({
-        on: true,
-        color: 'green',
-        text: `Successfully set policy for "${user.value?.networkDomain}"`,
-      })
+      pushSuccess(
+        `Successfully set policy for "${user.value?.networkDomain}"`,
+      )
       alert.value = { on: false }
       await loadPolicy()
-      if (showDiff.value) {
-        toggleDiffView()
-      }
+      if (showDiff.value) toggleDiffView()
     })
-    if (ret) {
-      alert.value = ret
-    }
+    if (ret) alert.value = ret
   } finally {
     loading.value = false
   }
@@ -407,18 +386,16 @@ async function savePolicy() {
 function discardChanges() {
   const contentToRestore = savedPolicy.value || defaultPolicy
   editor?.setValue(contentToRestore)
-  if (showDiff.value) {
-    toggleDiffView()
-  }
+  if (showDiff.value) toggleDiffView()
 }
 
 onMounted(() => {
   initEditor()
   loadPolicy()
+  loadNodes()
 })
 
 onBeforeUnmount(() => {
-  // Don't dispose. It will freeze the editor.
   editor?.dispose()
   diffEditor?.dispose()
 })
@@ -426,122 +403,136 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container fluid>
-    <v-sheet class="mx-auto" border="0" elevation="0">
-      <v-row>
-        <v-col cols="12" :xl="showDiff ? 12 : 6">
-          <v-card :theme="isDarkTheme ? 'dark' : 'light'">
-            <v-card-title class="d-flex align-center">
-              Security Policy Editor
-              <v-spacer></v-spacer>
-              <v-btn
-                variant="text"
-                class="mr-2"
-                icon
-                @click="toggleTheme"
-                :title="
-                  isDarkTheme ? 'Switch to Light Theme' : 'Switch to Dark Theme'
-                "
-              >
-                <v-icon
-                  :icon="
-                    isDarkTheme ? mdiWhiteBalanceSunny : mdiMoonWaningCrescent
-                  "
-                >
-                </v-icon>
-              </v-btn>
-              <v-btn
-                color="info"
-                variant="outlined"
-                class="mr-2"
-                :disabled="!isPolicyDifferentThanSaved"
-                @click="toggleDiffView"
-                :prepend-icon="showDiff ? mdiPencil : mdiFileCompare"
-              >
-                {{ showDiff ? 'Back to Editor' : 'View Diff' }}
-              </v-btn>
-              <v-btn
-                color="error"
-                variant="outlined"
-                class="mr-2"
-                :disabled="!isPolicyDifferentThanSaved"
-                @click="discardChanges"
-                :prepend-icon="mdiUndo"
-              >
-                Discard Changes
-              </v-btn>
-              <v-btn
-                color="primary"
-                :loading="loading"
-                @click="savePolicy"
-                :prepend-icon="mdiContentSave"
-              >
-                Save Policy
-              </v-btn>
-            </v-card-title>
+    <v-card :theme="isDarkTheme ? 'dark' : 'light'">
+      <v-card-title class="d-flex align-center flex-wrap ga-2">
+        Security Policy
+        <v-spacer />
+        <v-btn
+          variant="text"
+          icon
+          @click="toggleTheme"
+          :title="
+            isDarkTheme ? 'Switch to Light Theme' : 'Switch to Dark Theme'
+          "
+        >
+          <v-icon
+            :icon="isDarkTheme ? mdiWhiteBalanceSunny : mdiMoonWaningCrescent"
+          />
+        </v-btn>
+        <v-btn
+          v-if="tab === 'editor'"
+          color="info"
+          variant="outlined"
+          :disabled="!isPolicyDifferentThanSaved"
+          @click="toggleDiffView"
+          :prepend-icon="showDiff ? mdiPencil : mdiFileCompare"
+        >
+          {{ showDiff ? 'Back to Editor' : 'View Diff' }}
+        </v-btn>
+        <v-btn
+          color="error"
+          variant="outlined"
+          :disabled="!isPolicyDifferentThanSaved"
+          @click="discardChanges"
+          :prepend-icon="mdiUndo"
+        >
+          Discard
+        </v-btn>
+        <v-btn
+          color="primary"
+          :loading="loading"
+          @click="savePolicy"
+          :prepend-icon="mdiContentSave"
+        >
+          Save Policy
+        </v-btn>
+      </v-card-title>
 
-            <v-card-text class="text-subtitle-1">
-              <strong>Note: This is a beta feature. Use with caution.</strong>
-              Please make sure you have alternative methods to access your
-              devices in case the policy breaks your connectivity over the mesh
-              network.
-            </v-card-text>
-            <v-card-text class="text-subtitle-1">
-              Edit the policy in JSON format. Comments are allowed. It is saved
-              automatically as draft. To apply it, click the
-              <strong>Save Policy</strong> button.
-            </v-card-text>
-            <v-alert
-              v-if="isPolicyDifferentThanSaved"
-              type="warning"
-              class="mb-2"
-            >
-              The policy local copy is not the same as the backend saved copy.
-              Click the Save Policy button to apply the changes. Or discard the
-              local changes.
-            </v-alert>
-            <v-card-text>
-              <Alert v-model="alert" />
+      <v-tabs v-model="tab" color="primary" grow>
+        <v-tab value="rules" :prepend-icon="mdiFormatListBulleted">
+          Rules
+        </v-tab>
+        <v-tab value="matrix" :prepend-icon="mdiGrid">Matrix</v-tab>
+        <v-tab value="editor" :prepend-icon="mdiCodeJson">Editor</v-tab>
+        <v-tab value="graph" :prepend-icon="mdiGraphOutline">Graph</v-tab>
+        <v-tab value="derp" :prepend-icon="mdiEarth">DERP</v-tab>
+      </v-tabs>
 
-              <div
-                v-if="!showDiff"
-                ref="editorContainer"
-                class="mt-2 editor-container"
-              ></div>
-              <div
-                v-else
-                ref="diffEditorContainer"
-                class="mt-2 editor-container"
-              ></div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" :xl="showDiff ? 12 : 6">
-          <v-card variant="plain">
-            <v-card-title class="d-flex align-center">
-              Connectivity Graph
-              <v-spacer />
-              <v-switch
-                v-model="showConnectivity"
-                color="primary"
-                inset
-                hide-details
-                density="compact"
-                label="Show graph"
-              />
-            </v-card-title>
-            <v-expand-transition>
-              <v-card-text v-if="showConnectivity">
-                <VpnConnectivityGraph
-                  :loading="loading"
-                  :nodes="nodes ?? []"
-                  :policy="policy"
-                />
-              </v-card-text>
-            </v-expand-transition>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-sheet>
+      <v-divider />
+
+      <v-card-text>
+        <v-alert
+          v-if="isPolicyDifferentThanSaved"
+          type="warning"
+          variant="tonal"
+          class="mb-3"
+          density="comfortable"
+        >
+          Local draft differs from the saved policy. Click <strong>Save
+          Policy</strong> to apply, or <strong>Discard</strong> to revert.
+        </v-alert>
+
+        <Alert v-model="alert" />
+
+        <!-- Editor: always mounted via v-show so Monaco container survives tab switches -->
+        <div v-show="tab === 'editor'">
+          <p class="text-subtitle-2 mb-2">
+            <strong>Note: This is a beta feature.</strong> Make sure you have
+            alternative access methods in case the policy breaks mesh
+            connectivity. Edits are auto-saved as draft; click Save Policy to
+            apply.
+          </p>
+          <div
+            v-show="!showDiff"
+            ref="editorContainer"
+            class="mt-2 editor-container"
+          />
+          <div
+            v-show="showDiff"
+            ref="diffEditorContainer"
+            class="mt-2 editor-container"
+          />
+        </div>
+
+        <div v-show="tab === 'rules'">
+          <PolicyRulesTable
+            :policy="policy"
+            :highlight-rule-index="highlight.ruleIndex"
+            :highlight-src="highlight.src"
+            :highlight-dst="highlight.dst"
+            @select-rule="setRuleHighlight"
+            @clear-highlight="clearHighlight"
+          />
+        </div>
+
+        <div v-show="tab === 'matrix'">
+          <PolicyMatrix
+            :policy="policy"
+            :highlight-src="highlight.src"
+            :highlight-dst="highlight.dst"
+            @select="setCellHighlight"
+          />
+        </div>
+
+        <div v-if="tab === 'graph'">
+          <VpnConnectivityGraph
+            :loading="loading"
+            :nodes="nodes ?? []"
+            :policy="policy"
+            :saved-policy="savedPolicy"
+            :highlight-rule-index="highlight.ruleIndex"
+            :highlight-src="highlight.src"
+            :highlight-dst="highlight.dst"
+            @navigate-to-rule="goToRule"
+            @select-cell="setCellHighlight"
+          />
+        </div>
+
+        <div v-show="tab === 'derp'">
+          <PolicyDerpMap :policy="policy" />
+        </div>
+      </v-card-text>
+    </v-card>
   </v-container>
 </template>
 
@@ -549,11 +540,10 @@ onBeforeUnmount(() => {
 .editor-container {
   border: 1px solid var(--v-border-color);
   border-radius: 4px;
-  height: 80vh;
+  height: 72vh;
   width: 100%;
 }
 
-/* Add transition for theme changes */
 :deep(.monaco-editor) {
   transition: background-color 0.3s ease;
 }

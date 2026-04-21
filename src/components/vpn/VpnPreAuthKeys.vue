@@ -321,6 +321,9 @@ defineExpose({
       :search="search"
       @update:options="loadItems"
     >
+      <template v-slot:loading>
+        <TableSkeleton :columns="computedHeaders.length" :rows="6" />
+      </template>
       <template v-slot:item.key="{ item }">
         <ShortenTextChip :text="item.key ?? ''"></ShortenTextChip>
       </template>

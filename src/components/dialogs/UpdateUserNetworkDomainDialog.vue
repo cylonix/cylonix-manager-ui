@@ -36,7 +36,7 @@ const buttonText = computed(() => {
 })
 
 const caption = computed(() => {
-  return `Update user "${props.user?.displayName}"'s network domain to `
+  return `Update network domain that user "${props.user?.displayName}" manages to `
 })
 
 async function generateNetworkDomain() {

@@ -5,6 +5,42 @@ import { createWebHistory, createRouter, type RouteLocationNormalized } from 'vu
 
 // Components are lazy-loaded in route definitions below to enable code-splitting.
 import { useUserStore } from '@/stores/user'
+import { navItems } from '@/composables/useNavItems'
+
+const BRAND = 'Cylonix'
+
+const extraTitles: Record<string, string> = {
+  '/': 'Home',
+  '/login': 'Sign in',
+  '/signup': 'Sign up',
+  '/confirm-session': 'Confirm session',
+  '/add-custom-auth': 'Add custom auth provider',
+  '/add-custom-auth-success': 'Custom auth added',
+  '/oauth-success': 'Signing in',
+  '/invite': 'Invite',
+  '/303/login/approval': 'Login approval',
+  '/303/login/error': 'Login error',
+  '/delete-account': 'Delete account',
+  '/delete-account-with-login': 'Delete account',
+  '/no-service': 'Service unavailable',
+  '/privacy-policy': 'Privacy policy',
+  '/web-privacy-policy': 'Privacy policy',
+  '/terms-of-service': 'Terms of service',
+  '/qr-code-sign-in': 'QR code sign-in',
+  '/ui/vpn-node-details': 'Node details',
+}
+
+function titleForPath(path: string): string | undefined {
+  const nav = navItems.find((n) => n.path === path)
+  if (nav) return nav.title
+  if (extraTitles[path]) return extraTitles[path]
+  // Prefix match for routes with dynamic segments (e.g. /login/:sessionID).
+  const prefixes = Object.keys(extraTitles).sort((a, b) => b.length - a.length)
+  for (const p of prefixes) {
+    if (path === p || path.startsWith(`${p}/`)) return extraTitles[p]
+  }
+  return undefined
+}
 
 const routes = [
   { path: '/', component: () => import('@/components/vpn/VpnNodes.vue'), meta: { requiresAuth: true } },
@@ -175,6 +211,11 @@ router.beforeEach((to, from) => {
     }
   }
   return true
+})
+
+router.afterEach((to) => {
+  const t = titleForPath(to.path)
+  document.title = t ? `${t} · ${BRAND}` : `Welcome to ${BRAND}`
 })
 
 export default router
