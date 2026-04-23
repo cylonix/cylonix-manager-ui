@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { WgNode } from '@/clients/manager/api'
+import { WgAdminStateState, WgNode } from '@/clients/manager/api'
 import { tryRequest, wgAPI } from '@/plugins/api'
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
@@ -96,6 +96,24 @@ async function deleteItem(item: WgNode) {
   loading.value = false
 }
 
+async function setAdminState(item: WgNode, down: boolean) {
+  loading.value = true
+  const state = down ? WgAdminStateState.Down : WgAdminStateState.Up
+  const ret = await tryRequest(async () => {
+    await wgAPI.setWgNodeAdminState(item.id, { state })
+    await refresh()
+    newToast({
+      on: true,
+      color: 'green',
+      text: `${down ? 'Shut down' : 'Brought up'} wireguard gateway ${name(item)}/${item.namespace}`,
+    })
+  })
+  if (ret) {
+    alert.value = ret
+  }
+  loading.value = false
+}
+
 function confirmDeleteText(item: WgNode): string {
   return (
     `Delete wireguard gateway "${item.name}/${item.namespace}" with ID ` +
@@ -136,6 +154,26 @@ function confirmDeleteText(item: WgNode): string {
       </template>
 
       <template v-slot:item.actions="{ item }">
+        <v-btn
+          class="mr-2"
+          size="small"
+          variant="tonal"
+          :color="'orange'"
+          :prepend-icon="'mdi-power'"
+          @click="setAdminState(item, true)"
+        >
+          Shut down
+        </v-btn>
+        <v-btn
+          class="mr-2"
+          size="small"
+          variant="tonal"
+          :color="'green'"
+          :prepend-icon="'mdi-power-on'"
+          @click="setAdminState(item, false)"
+        >
+          Bring up
+        </v-btn>
         <DeleteButton
           v-model:note="note"
           :confirmDeleteText="confirmDeleteText(item)"
