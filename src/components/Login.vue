@@ -196,21 +196,16 @@ async function submit() {
   }
 
   try {
-    const ret = await loginAPI.login(
-      type,
-      undefined,
-      namespace.value,
+    const ret = await loginAPI.login({
+      loginType: type!,
+      namespace: namespace.value,
       loginID,
-      props.sessionID,
-      props.inviteCode,
+      sessionID: props.sessionID,
+      invitationCode: props.inviteCode,
       credential,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      code.value,
-      MfaType.Email
-    )
+      mfaOneTimeCode: code.value,
+      mfaType: MfaType.Email,
+    })
     console.log('login success', ret.data)
     userStore.$patch((state) => {
       state.apiKey = saveApiKey ? ret.data.apiKey : ''

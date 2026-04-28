@@ -40,13 +40,10 @@ onMounted(async () => {
     console.log('trying to login with oauth success token')
     loading.value = true
     const ret = await tryRequest(async () => {
-      const ret = await loginAPI.login(
-        LoginType.Username,
-        undefined,
-        undefined,
-        undefined,
-        props.sessionID
-      )
+      const ret = await loginAPI.login({
+        loginType: LoginType.Username,
+        sessionID: props.sessionID,
+      })
       loginStore.$patch((state) => {
         state.loginType = ret.data.login.loginType
         state.namespace = ret.data.user.namespace
