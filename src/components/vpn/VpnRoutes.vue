@@ -7,8 +7,25 @@
 import { ref } from 'vue'
 import { mdiCheck } from '@mdi/js'
 import { storeToRefs } from 'pinia'
-import { V1Route } from '@/clients/headscale/api'
+import type { V1Node } from '@/clients/headscale/api'
 import { tryRequest, vpnAPI } from '@/plugins/api'
+
+// v0.28 headscale removed the routes table and GetRoutes RPC; routes now live
+// on each node as availableRoutes (advertised) / approvedRoutes (enabled) /
+// subnetRoutes (served). RouteRow flattens a node's routes into one table row
+// per prefix so this admin table keeps working.
+interface RouteRow {
+  id: string
+  node: V1Node
+  prefix: string
+  advertised: boolean
+  enabled: boolean
+  isPrimary: boolean
+  namespace?: string
+  network?: string
+  createdAt?: string
+  updatedAt?: string
+}
 import { shortTs } from '@/plugins/date'
 import { newToast } from '@/plugins/toast'
 import { useServerTable, buildSortParams } from '@/composables/useServerTable'
@@ -58,49 +75,76 @@ const {
   refresh,
   serverItems,
   totalItems,
-} = useServerTable<V1Route>({
+} = useServerTable<RouteRow>({
   defaultItemsPerPage: 10,
   onLoad: async ({ options }) => {
     const network = user.value?.networkDomain
     if (!isAdmin.value && !isNetworkAdmin.value) {
       throw new Error('Only Network Admins can view routes.')
     }
-    // Custom sort: 'node' maps to 'node_id' on the backend
-    let { sortBy, sortDesc } = buildSortParams(options.sortBy)
-    if (sortBy) {
-      sortBy = sortBy.replace(/\bnode\b/, 'node_id')
-    }
-    const ret = await vpnAPI.headscaleServiceGetRoutes(
-      undefined,
-      [],
+    const { sortBy, sortDesc } = buildSortParams(options.sortBy)
+    // List nodes for the tenant and flatten their routes. Fetch all in one
+    // call (route-advertising nodes are few) and paginate the flattened rows
+    // client-side, since pagination is per-route not per-node.
+    const ret = await vpnAPI.headscaleServiceListNodes(
+      undefined, // user
+      [], // nodeIDList
       isSysAdmin.value ? undefined : namespace.value,
       isAdmin.value ? undefined : network,
-      undefined,
-      undefined,
+      undefined, // onlineOnly
+      undefined, // filterBy
+      undefined, // filterValue
       sortBy,
       sortDesc,
-      options.page,
-      options.itemsPerPage
+      1, // page
+      100000 // pageSize: all
     )
+    const rows: RouteRow[] = []
+    for (const node of ret?.data.nodes ?? []) {
+      const avail = node.availableRoutes ?? []
+      const approved = node.approvedRoutes ?? []
+      const primary = node.subnetRoutes ?? []
+      const prefixes = Array.from(new Set([...avail, ...approved]))
+      for (const prefix of prefixes) {
+        rows.push({
+          id: `${node.id}-${prefix}`,
+          node,
+          prefix,
+          advertised: avail.includes(prefix),
+          enabled: approved.includes(prefix),
+          isPrimary: primary.includes(prefix),
+          namespace: node.namespace,
+          network: node.networkDomain,
+          createdAt: node.createdAt,
+          updatedAt: node.lastSeen,
+        })
+      }
+    }
+    const start = (options.page - 1) * options.itemsPerPage
     return {
-      items: ret?.data.routes ?? [],
-      total: ret?.data.total ?? 0,
+      items: rows.slice(start, start + options.itemsPerPage),
+      total: rows.length,
     }
   },
 })
 
-async function deleteItem(item: V1Route) {
+// v0.28 has no per-route delete; "delete" unapproves the route on its node.
+async function deleteItem(item: RouteRow) {
   loading.value = true
   const ret = await tryRequest(async () => {
-    if (!item.id) {
+    const id = item.node.id
+    if (!id) {
       return
     }
-    await vpnAPI.headscaleServiceDeleteRoute(item.id)
+    const routes = (item.node.approvedRoutes ?? []).filter(
+      (p) => p !== item.prefix
+    )
+    await vpnAPI.headscaleServiceSetApprovedRoutes(id, { routes })
     await refresh()
     newToast({
       on: true,
       color: 'green',
-      text: `Successfully deleted route ${item.prefix}`,
+      text: `Disabled route ${item.prefix}`,
     })
   })
   if (ret) {
@@ -109,8 +153,8 @@ async function deleteItem(item: V1Route) {
   loading.value = false
 }
 
-function confirmDeleteText(item: V1Route): string {
-  return `Delete route "${item.prefix}" from ${item.node?.givenName}?`
+function confirmDeleteText(item: RouteRow): string {
+  return `Disable route "${item.prefix}" on ${item.node?.givenName}?`
 }
 </script>
 <template>

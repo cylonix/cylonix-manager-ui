@@ -19,7 +19,67 @@ import {
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useDisplay } from 'vuetify'
-import type { V1Node, V1RouteSpec } from '@/clients/headscale/api'
+import type { V1Node } from '@/clients/headscale/api'
+
+// v0.28 headscale removed the routes table and its Get/Enable/Disable/Delete
+// RPCs. Routes now live on the node as string lists: availableRoutes
+// (advertised by the client), approvedRoutes (enabled by an admin), and
+// subnetRoutes (actively served = intersection). This view-model flattens
+// them so the template can keep rendering per-route rows.
+interface RouteView {
+  prefix: string
+  advertised: boolean
+  enabled: boolean
+  isPrimary: boolean
+}
+
+function routeViews(item: V1Node): RouteView[] {
+  const avail = item.availableRoutes ?? []
+  const approved = item.approvedRoutes ?? []
+  const primary = item.subnetRoutes ?? []
+  const prefixes = Array.from(new Set([...avail, ...approved]))
+  return prefixes.map((prefix) => ({
+    prefix,
+    advertised: avail.includes(prefix),
+    enabled: approved.includes(prefix),
+    isPrimary: primary.includes(prefix),
+  }))
+}
+
+// setApproved adds or removes the given prefixes from the node's approved
+// routes and pushes the full list via SetApprovedRoutes (the only route RPC
+// left), then refreshes the node.
+async function setApproved(item: V1Node, prefixes: string[], enable: boolean) {
+  const id = item.id
+  if (!id) {
+    alert.value = { on: true, type: 'error', title: 'Node ID is missing' }
+    return
+  }
+  const approved = new Set(item.approvedRoutes ?? [])
+  for (const p of prefixes) {
+    if (enable) {
+      approved.add(p)
+    } else {
+      approved.delete(p)
+    }
+  }
+  const routes = Array.from(approved)
+  const ret = await tryRequest(async () => {
+    await vpnAPI.headscaleServiceSetApprovedRoutes(id, { routes })
+    const resp = await vpnAPI.headscaleServiceGetNode(id)
+    if (resp?.data.node) {
+      setCurrentNode(resp.data.node)
+    }
+    newToast({
+      on: true,
+      color: 'green',
+      text: `Successfully updated routes for ${item.givenName ?? id}`,
+    })
+  })
+  if (ret) {
+    alert.value = ret
+  }
+}
 import { useCurrentNode } from '@/composables/useCurrentNode'
 import type { Alert } from '@/plugins/alert'
 import { tryRequest, vpnAPI, parseNodeHealth } from '@/plugins/api'
@@ -68,59 +128,22 @@ const getOSInfo = (item: V1Node) => {
   return version ? `${os} (${version})` : os
 }
 
+// Exit node = both default routes approved (enabled).
 const isExitNode = (item: V1Node) => {
-  const routes = item.routes
-  if (!routes || routes.length <= 0) {
-    return false
-  }
-  let hasV4 = false
-  let hasV6 = false
-  for (const r of routes) {
-    if (r.prefix === '0.0.0.0/0' && r.enabled) {
-      hasV4 = true
-    } else if (r.prefix === '::/0' && r.enabled) {
-      hasV6 = true
-    }
-    if (hasV4 && hasV6) {
-      return true
-    }
-  }
-  return hasV4 && hasV6
+  const approved = item.approvedRoutes ?? []
+  return approved.includes('0.0.0.0/0') && approved.includes('::/0')
 }
 
+// Advertises exit-node routes (whether or not approved yet).
 const hasExitNodeRoutes = (item: V1Node) => {
-  const routes = item.routes
-  if (!routes || routes.length <= 0) {
-    return false
-  }
-  let hasV4 = false
-  let hasV6 = false
-  for (const r of routes) {
-    if (r.prefix === '0.0.0.0/0') {
-      hasV4 = true
-    } else if (r.prefix === '::/0') {
-      hasV6 = true
-    }
-    if (hasV4 && hasV6) {
-      return true
-    }
-  }
-  return hasV4 && hasV6
+  const avail = item.availableRoutes ?? []
+  return avail.includes('0.0.0.0/0') && avail.includes('::/0')
 }
 
-const nonDefaultRoutes = (item: V1Node) => {
-  const routes = item.routes
-  if (!routes || routes.length <= 0) {
-    return []
-  }
-  const nonDefaultRoutes: V1RouteSpec[] = []
-  for (const r of routes) {
-    if (r.prefix === '0.0.0.0/0' || r.prefix === '::/0') {
-      continue
-    }
-    nonDefaultRoutes.push(r)
-  }
-  return nonDefaultRoutes
+const nonDefaultRoutes = (item: V1Node): RouteView[] => {
+  return routeViews(item).filter(
+    (r) => r.prefix !== '0.0.0.0/0' && r.prefix !== '::/0'
+  )
 }
 
 const getRelativeTime = (timestamp: string) => {
@@ -146,7 +169,7 @@ const confirmDeleteRouteText = (prefix: string | undefined): string => {
   )
 }
 
-async function toggleRoute(route: V1RouteSpec) {
+async function toggleRoute(route: RouteView) {
   if (!isNetworkAdmin.value) {
     alert.value = {
       on: true,
@@ -155,83 +178,27 @@ async function toggleRoute(route: V1RouteSpec) {
     }
     return
   }
-  const id = route.id
-  if (!id) {
-    alert.value = {
-      on: true,
-      type: 'error',
-      title: `Route ID is missing for route ${route.prefix}`,
-    }
+  if (!nodeItem.value) {
     return
   }
-  const enable = !route.enabled
-  const ret = await tryRequest(async () => {
-    enable
-      ? await vpnAPI.headscaleServiceEnableRoute(id)
-      : await vpnAPI.headscaleServiceDisableRoute(id)
-    route.enabled = enable
-    newToast({
-      on: true,
-      color: 'green',
-      text: `Successfully ${enable ? 'enabled' : 'disabled'} route ${
-        route.prefix
-      }`,
-    })
-  })
-  if (ret) {
-    alert.value = ret
-  }
+  await setApproved(nodeItem.value, [route.prefix], !route.enabled)
 }
 
 async function toggleExitNode(item: V1Node) {
   if (!isNetworkAdmin.value) {
     return
   }
-  const routes = item.routes
-  if (!routes || routes.length <= 0) {
-    alert.value = {
-      on: true,
-      type: 'error',
-      title: 'No routes found for this node',
-    }
-    return
-  }
-  for (const r of routes) {
-    if (r.prefix === '0.0.0.0/0' || r.prefix === '::/0') {
-      await toggleRoute(r)
-    }
-  }
+  // Approve or reject both default routes together.
+  await setApproved(item, ['0.0.0.0/0', '::/0'], !isExitNode(item))
 }
 
-async function deleteRoute(route: V1RouteSpec) {
-  const id = route.id
-  if (!id) {
-    alert.value = {
-      on: true,
-      title: `Route ID is missing for route ${route.prefix}`,
-    }
+// v0.28 has no per-route delete; "delete" simply unapproves the route. The
+// node may still advertise it (availableRoutes); it just won't be served.
+async function deleteRoute(route: RouteView) {
+  if (!nodeItem.value) {
     return
   }
-  const ret = await tryRequest(async () => {
-    await vpnAPI.headscaleServiceDeleteRoute(id)
-    newToast({
-      on: true,
-      color: 'green',
-      text: `Successfully deleted route ${route.prefix}`,
-    })
-    const nodeID = nodeItem.value?.id
-    if (!nodeID) {
-      return
-    }
-    const resp = await vpnAPI.headscaleServiceGetNode(nodeID)
-    if (!resp || !resp.data.node) {
-      return
-    }
-    setCurrentNode(resp.data.node)
-  })
-  if (ret) {
-    alert.value = ret
-  }
+  await setApproved(nodeItem.value, [route.prefix], false)
 }
 const addCapDialog = ref(false)
 const addCapAlert = ref<Alert>({ on: false })
